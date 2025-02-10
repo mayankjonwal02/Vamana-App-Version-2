@@ -1,6 +1,7 @@
 package com.mayank.vamanaappversion2.Frontend
 
 import AllPatientsScreen
+import Timeline
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Addchart
+import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Menu
@@ -34,13 +38,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
+import com.example.analysis.AnalysisScreen
 import com.mayank.vamanaapp.Frontend.Doctor.AddPatientFormScreen
 import com.mayank.vamanaappversion2.Backend.API_ViewModel
+import com.mayank.vamanaappversion2.Backend.getSharedPreferences
 import com.mayank.vamanaappversion2.Constants
 import com.mayank.vamanaappversion2.R
 import kotlinx.coroutines.launch
@@ -56,6 +63,8 @@ fun DoctorCommonScreen(navController: NavHostController, apiviewmodel: API_ViewM
     var content_state = remember {
         mutableStateOf(0)
     }
+    var context = LocalContext.current
+    var role = getSharedPreferences(context).getString("role","Not Defined")
     ModalNavigationDrawer(
         drawerContent = {
             ModalDrawerSheet {
@@ -83,13 +92,38 @@ fun DoctorCommonScreen(navController: NavHostController, apiviewmodel: API_ViewM
                         label = { Text("Create Patients") },
                         selected = false,
                         icon = { Icon(Icons.Outlined.Person, contentDescription = null) },
-                        onClick = { content_state.value = 0 }
+                        onClick = { content_state.value = 0
+                            scope.launch {
+                                drawerState.close()
+                            }}
                     )
                     NavigationDrawerItem(
                         label = { Text("View Patients") },
                         selected = false,
                         icon = { Icon(Icons.Default.Groups, contentDescription = null) },
-                        onClick = { content_state.value = 1 },
+                        onClick = { content_state.value = 1
+                            scope.launch {
+                                drawerState.close()
+                            }},
+                    )
+                    NavigationDrawerItem(
+                        label = { Text("Timeline") },
+                        selected = false,
+                        icon = { Icon(Icons.Default.BarChart, contentDescription = null) },
+                        onClick = { content_state.value = 2
+                            scope.launch {
+                                drawerState.close()
+                            }},
+                    )
+
+                    NavigationDrawerItem(
+                        label = { Text("Overall Analysis") },
+                        selected = false,
+                        icon = { Icon(Icons.Default.Analytics, contentDescription = null) },
+                        onClick = { content_state.value = 3
+                            scope.launch {
+                                drawerState.close()
+                            }},
                     )
 //                    NavigationDrawerItem(
 //                        label = { Text("View Users") },
@@ -102,8 +136,15 @@ fun DoctorCommonScreen(navController: NavHostController, apiviewmodel: API_ViewM
                         selected = false,
                         icon = { Icon(Icons.Default.Logout, contentDescription = null) },
                         onClick = {
-                            navController.navigate("signin")
-                                  },
+                            scope.launch {
+                                drawerState.close()
+                            }
+                            navController.navigate("signin") {
+                                popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                launchSingleTop = true
+                            }
+
+                        },
                     )
                     Spacer(Modifier.height(12.dp))
                 }
@@ -142,6 +183,14 @@ fun DoctorCommonScreen(navController: NavHostController, apiviewmodel: API_ViewM
 
                     1 -> {
                         AllPatientsScreen(apiviewmodel)
+                    }
+
+                    2 -> {
+                        Timeline(apiviewmodel)
+                    }
+
+                    3 -> {
+                        AnalysisScreen(apiviewmodel)
                     }
 
 

@@ -78,4 +78,21 @@ interface API_Service {
     @DELETE("patient/patients/{uhid}")
     suspend fun deletePatients(@Path("uhid") uhid : String) : GeneralResponce
 
+
+
+    @GET("analysis/analysisquestions")
+    suspend fun getAnalysisQuestions() : GetAnalysisQuestionsResponce
+
+    @POST("analysis/analysisQuestions")
+    suspend fun createAnalysisQuestion(@Body question: QuestionDetail) : GeneralResponce
+    @PUT("analysis/analysisQuestions/{id}")
+    suspend fun updateAnalysisQuestion(@Path("id") id : String, @Body update: QuestionDetail) : GeneralResponce
+
+    @DELETE("analysis/analysisQuestions/{id}")
+    suspend fun deleteAnalysisQuestion(@Path("id") id : String) : GeneralResponce
+
+
+    @GET("analysis/analysisStatistics")
+    suspend fun getOverallAnalysis() : OverAllAnalysisResponse
+
 }

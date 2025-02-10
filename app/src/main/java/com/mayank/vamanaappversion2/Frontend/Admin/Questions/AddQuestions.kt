@@ -3,12 +3,14 @@ package com.mayank.vamanaapp.Frontend.Admin.Questions
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -45,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -222,10 +225,10 @@ fun QuestionsScreen(apiviewmodel: API_ViewModel) {
         if (isAddQuestionDialogOpen) {
             AddQuestionDialog(
                 onDismiss = { isAddQuestionDialogOpen = false },
-                onSave = { questionText, options ->
-                    if (questionText.isNotBlank() && options.isNotEmpty()) {
+                onSave = { questionText,inputtype, options ->
+                    if (questionText.isNotBlank() ) {
 
-                        apiviewmodel.AddQuestion(categories[selectedCategoryIndex].id , QuestionDetail( question = questionText , options = options))
+                        apiviewmodel.AddQuestion(categories[selectedCategoryIndex].id , QuestionDetail( question = questionText, inputtype = inputtype , options = options))
                         {
                             apiviewmodel.GetAllQuestions()
                         }
@@ -368,7 +371,9 @@ fun QuestionItem(
             }
 
             Spacer(modifier = Modifier.height(20.dp))
-            Row( modifier = Modifier.fillMaxWidth().wrapContentHeight(), verticalAlignment = Alignment.CenterVertically , horizontalArrangement = Arrangement.SpaceBetween) {
+            Row( modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight(), verticalAlignment = Alignment.CenterVertically , horizontalArrangement = Arrangement.SpaceBetween) {
                 Button(onClick = { isEditDialogOpen = true }, colors = ButtonDefaults.buttonColors(containerColor = Constants.TertiaryColor)) {
                     Text("Edit")
                 }
@@ -382,9 +387,10 @@ fun QuestionItem(
         EditQuestionDialog(
             questionText = questionData.question,
             options = questionData.options,
+            input_type = questionData.inputtype,
             onDismiss = { isEditDialogOpen = false },
-            onSave = { newQuestion, newOptions ->
-                var question = QuestionDetail(id =questionData.id!!  , question = newQuestion , options = newOptions)
+            onSave = { newQuestion,newinputtype, newOptions ->
+                var question = QuestionDetail(id =questionData.id!!  , question = newQuestion , inputtype = newinputtype, options = newOptions)
                 apiviewmodel.UpdateQuestion(categoryid , question)
                 {
                     apiviewmodel.GetAllQuestions()
@@ -452,13 +458,21 @@ fun ConfirmQuestionDelete(questionData: QuestionDetail,
 fun EditQuestionDialog(
     questionText: String,
     options: List<String>,
+    input_type : String,
     onDismiss: () -> Unit,
-    onSave: (String, MutableList<String>) -> Unit
+    onSave: (String,String, MutableList<String>) -> Unit
 ) {
     var newQuestionText by remember { mutableStateOf(questionText) }
     val newOptions = remember { mutableStateListOf(*options.toTypedArray()) } // Use mutableStateListOf
     var newOptionText by remember { mutableStateOf("") } // Tracks the new option text
-
+    val inputTypesList = listOf(
+        "text", "textarea", "number", "radio", "checkbox", "dropdown",
+        "date", "datetime",  "time"
+    )
+    var inputtype by remember {
+        mutableStateOf(input_type.toString())
+    }
+    var expanded by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Edit Question") },
@@ -475,53 +489,85 @@ fun EditQuestionDialog(
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Options:", style = MaterialTheme.typography.titleMedium)
-
-                newOptions.forEachIndexed { index, option ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Button(
+                        onClick = { expanded = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Constants.TertiaryColor)
                     ) {
+                        Text(text = if(inputtype == "") "Select Input-Type" else "Input Type : "+inputtype)
+                    }
+
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.background(Color.White).height(200.dp)
+                    ) {
+                        inputTypesList.forEach { type ->
+                            DropdownMenuItem(
+                                text = { Text(type) },
+                                onClick = {
+                                    inputtype = type
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                if (listOf("radio", "checkbox", "dropdown").contains(inputtype))
+                {
+                    Text("Options:", style = MaterialTheme.typography.titleMedium)
+
+                    newOptions.forEachIndexed { index, option ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedTextField(
+                                value = option,
+                                onValueChange = { newOptions[index] = it }, // Update value
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(3.dp)
+                            )
+                            IconButton(onClick = {
+                                newOptions.removeAt(index) // Trigger recomposition
+                            }) {
+                                Icon(Icons.Default.Delete, contentDescription = "Delete Option")
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+
+                    // Add new option input
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(
-                            value = option,
-                            onValueChange = { newOptions[index] = it }, // Update value
+                            value = newOptionText,
+                            onValueChange = { newOptionText = it },
+                            label = { Text("New Option") },
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(3.dp)
                         )
-                        IconButton(onClick = {
-                            newOptions.removeAt(index) // Trigger recomposition
-                        }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete Option")
+                        Button(onClick = {
+                            if (newOptionText.isNotBlank()) {
+                                newOptions.add(newOptionText) // Trigger recomposition
+                                newOptionText = "" // Clear input after adding
+                            }
+                        },
+                            colors = ButtonDefaults.buttonColors(containerColor = Constants.TertiaryColor)) {
+                            Text("Add Option")
                         }
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                // Add new option input
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(
-                        value = newOptionText,
-                        onValueChange = { newOptionText = it },
-                        label = { Text("New Option") },
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(3.dp)
-                    )
-                    Button(onClick = {
-                        if (newOptionText.isNotBlank()) {
-                            newOptions.add(newOptionText) // Trigger recomposition
-                            newOptionText = "" // Clear input after adding
-                        }
-                    },
-                        colors = ButtonDefaults.buttonColors(containerColor = Constants.TertiaryColor)) {
-                        Text("Add Option")
-                    }
-                }
+
             }
         },
         confirmButton = {
-            Button(onClick = { onSave(newQuestionText, newOptions.toMutableList()) },
+            Button(onClick = { onSave(newQuestionText,inputtype, newOptions.toMutableList()) },
                 colors = ButtonDefaults.buttonColors(containerColor = Constants.TertiaryColor)) { // Pass a copy of the list
                 Text("Save")
             }
@@ -571,18 +617,25 @@ fun AddCategoryDialog(onDismiss: () -> Unit, onSave: (String) -> Unit) {
 @Composable
 fun AddQuestionDialog(
     onDismiss: () -> Unit,
-    onSave: (String, List<String>) -> Unit
+    onSave: (String , String, List<String>) -> Unit
 ) {
     var questionText by remember { mutableStateOf("") }
     val options = remember { mutableStateListOf<String>() }
     var newOptionText by remember { mutableStateOf("") } // For the new option input
-
+    val inputTypesList = listOf(
+        "text", "textarea", "number", "radio", "checkbox", "dropdown",
+        "date", "datetime",  "time"
+    )
+    var inputtype by remember {
+        mutableStateOf("")
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add Question") },
         containerColor = Constants.PrimaryColor,
         text = {
-            Column(modifier = Modifier.height(400.dp)
+            Column(modifier = Modifier
+                .height(400.dp)
                 .verticalScroll(rememberScrollState())) {
                 // Input field for the question text
                 OutlinedTextField(
@@ -592,53 +645,86 @@ fun AddQuestionDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(16.dp))
+                var expanded by remember { mutableStateOf(false) }
 
-                // Display the list of options
-                Text("Options:", style = MaterialTheme.typography.titleMedium)
-
-                options.forEachIndexed { index, option ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Button(
+                        onClick = { expanded = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Constants.TertiaryColor)
                     ) {
-                        OutlinedTextField(
-                            value = option,
-                            onValueChange = { options[index] = it }, // Update the option
-                            modifier = Modifier.weight(1f)
-                        )
-                        IconButton(onClick = { options.removeAt(index) }) { // Delete the option
-                            Icon(Icons.Default.Delete, contentDescription = "Delete Option")
+                        Text(text = if(inputtype == "") "Select Input-Type" else "Input Type : "+inputtype)
+                    }
+
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.background(Color.White).height(200.dp)
+                    ) {
+                        inputTypesList.forEach { type ->
+                            DropdownMenuItem(
+                                text = { Text(type) },
+                                onClick = {
+                                    inputtype = type
+                                    expanded = false
+                                }
+                            )
                         }
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                // Input for adding a new option
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(
-                        value = newOptionText,
-                        onValueChange = { newOptionText = it },
-                        label = { Text("New Option") },
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(4.dp)
-                    )
-                    Button(onClick = {
-                        if (newOptionText.isNotBlank()) {
-                            options.add(newOptionText)
-                            newOptionText = "" // Clear the input field
+                if (listOf("radio", "checkbox", "dropdown").contains(inputtype))
+                {
+                    // Display the list of options
+                    Text("Options:", style = MaterialTheme.typography.titleMedium)
+
+                    options.forEachIndexed { index, option ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedTextField(
+                                value = option,
+                                onValueChange = { options[index] = it }, // Update the option
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(onClick = { options.removeAt(index) }) { // Delete the option
+                                Icon(Icons.Default.Delete, contentDescription = "Delete Option")
+                            }
                         }
-                    },
-                        colors = ButtonDefaults.buttonColors(containerColor = Constants.TertiaryColor)) {
-                        Text("Add")
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+                    // Input for adding a new option
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = newOptionText,
+                            onValueChange = { newOptionText = it },
+                            label = { Text("New Option") },
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(4.dp)
+                        )
+                        Button(onClick = {
+                            if (newOptionText.isNotBlank()) {
+                                options.add(newOptionText)
+                                newOptionText = "" // Clear the input field
+                            }
+                        },
+                            colors = ButtonDefaults.buttonColors(containerColor = Constants.TertiaryColor)) {
+                            Text("Add")
+                        }
                     }
                 }
+
+
+
             }
         },
         confirmButton = {
             Button(onClick = {
-                if (questionText.isNotBlank() && options.isNotEmpty()) {
-                    onSave(questionText, options.toList()) // Pass the question and options
+                if (questionText.isNotBlank() && inputtype.isNotBlank()) {
+                    onSave(questionText,inputtype, options.toList()) // Pass the question and options
                 }
             },
                 colors = ButtonDefaults.buttonColors(containerColor = Constants.TertiaryColor)) {

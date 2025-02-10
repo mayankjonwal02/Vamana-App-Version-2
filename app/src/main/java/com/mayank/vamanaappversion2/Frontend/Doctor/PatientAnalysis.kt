@@ -1,4 +1,4 @@
-package com.mayank.vamanaapp.Frontend.Doctor
+package com.mayank.vamanaappversion2.Frontend.Doctor
 
 import android.annotation.SuppressLint
 import android.app.TimePickerDialog
@@ -43,19 +43,18 @@ import java.util.Calendar
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AnswerQuestionScreen(
+fun AnalysisQuestionScreen(
     patient: Patient,
     apiviewmodel: API_ViewModel,
-    categories: List<Question>,
+
     onSubmitResponse: (onSubmitted: () -> Unit) -> Unit,
     onSubmitResponseFinal: () -> Unit
 ) {
+    val questions by apiviewmodel.all_analysis_questions.collectAsState()
     var drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    var selectedCategoryIndex by remember { mutableStateOf(0) }
-    val totalCategories = categories.size
-    val selectedCategory = categories.getOrElse(selectedCategoryIndex) { categories.last() }
-    val progress = selectedCategoryIndex.toFloat() / totalCategories.coerceAtLeast(1)
+
+
 
     val configuration = LocalConfiguration.current
 
@@ -68,41 +67,17 @@ fun AnswerQuestionScreen(
 //        onDismissRequest = { drawerState = false },
         modifier = Modifier.width((screenWidth ).toFloat().dp),
         drawerContent = {
-            SideNavBar(
-                patient = patient,
-                categories = categories,
-                selectedCategoryIndex = selectedCategoryIndex,
-                onCategorySelected = {
-                    selectedCategoryIndex = it
-                    scope.launch {
-                        drawerState.apply {
-                            close()
-                        }
-                    }
-                }
-            )
+
         }
     ) {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Answer : " + selectedCategory.category) },
-                    navigationIcon = {
-                        IconButton(onClick = {scope.launch {
-                            drawerState.apply {
-                                if (isClosed) open() else close()
-                            }
-                        } }) {
-                            Icon(
-                                imageVector = Icons.Filled.Menu,
-                                contentDescription = "Hamburger Menu"
-                            )
-                        }
-                    }
+                    title = { Text("Analyse Patient ") }
                 )
             }
         ) {
-            Box(modifier = Modifier.fillMaxSize()) {
+            Box(modifier = Modifier.fillMaxSize().padding(top = 30.dp)) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -116,26 +91,15 @@ fun AnswerQuestionScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    LinearProgressIndicator(
-                        progress = progress,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                    )
-                    Text(
-                        text = "Progress: ${(progress * 100).toInt()}%",
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.End,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
+
 
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Column(
                         modifier = Modifier.verticalScroll(rememberScrollState())
                     ) {
-                        QuestionsSection(
-                            questions = selectedCategory.questions,
+                        AnalysisQuestionsSection(
+                            questions = questions,
                             onOptionSelected = { questionId, option -> },
                             getCheckedState = { questionId, option -> false },
                             patient,
@@ -144,16 +108,13 @@ fun AnswerQuestionScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        NavigationButtons(
-                            currentIndex = selectedCategoryIndex,
-                            totalCategories = totalCategories,
-                            onPrevious = { if (selectedCategoryIndex > 0) selectedCategoryIndex-- },
+                        AnalysisNavigationButtons(
+                         
+                          
                             onNextOrSubmit = {
-                                if (selectedCategoryIndex < totalCategories - 1) {
-                                    onSubmitResponse { selectedCategoryIndex++ }
-                                } else {
+                                
                                     onSubmitResponseFinal()
-                                }
+                                
                             }
                         )
                     }
@@ -163,74 +124,11 @@ fun AnswerQuestionScreen(
     }
 }
 
-@Composable
-fun SideNavBar(
-    patient:Patient,
-    categories: List<Question>,
-    selectedCategoryIndex: Int,
-    onCategorySelected: (Int) -> Unit
-) {
-    val configuration = LocalConfiguration.current
 
-    // Get screen width and height in pixels
-    val screenWidth = configuration.screenWidthDp
-    val screenHeight = configuration.screenHeightDp
-        
-
-    Column(
-        modifier = Modifier
-            .background(Constants.PrimaryColor)
-            .width((screenWidth * 0.7).toFloat().dp)
-
-            .fillMaxHeight()
-//            .background(MaterialTheme.colorScheme.surface)
-            .padding(16.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceAround, modifier = Modifier
-            .background(Constants.PrimaryColor)
-            .padding(16.dp)
-        ) {
-            Icon(imageVector = Icons.Filled.Person, contentDescription = ""  , tint = Constants.SecondaryColor, modifier = Modifier
-                .border(
-                    border = BorderStroke(2.dp, color = Constants.SecondaryColor),
-                    shape = RoundedCornerShape(20.dp)
-                )
-                .size(50.dp))
-            Text(
-                text = "UHID: " + patient.uhid ,
-                style = MaterialTheme.typography.titleMedium,
-                textAlign = TextAlign.Center,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .fillMaxWidth()
-            )
-        }
-
-
-        categories.forEachIndexed { index, category ->
-            Row(modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start) {
-                Icon(imageVector = Icons.Filled.ArrowForwardIos , contentDescription = "", tint = if (index == selectedCategoryIndex) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface , modifier = Modifier.size(16.dp))
-                Text(
-                    text = category.category,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (index == selectedCategoryIndex) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier
-                        .padding(start = 3.dp)
-                        .clickable { onCategorySelected(index) }
-                )
-            }
-
-        }
-    }
-}
 
 
 @Composable
-fun QuestionsSection(
+fun AnalysisQuestionsSection(
     questions: List<QuestionDetail>,
     onOptionSelected: (String, String) -> Unit,
     getCheckedState: (String, String) -> Boolean,
@@ -243,7 +141,7 @@ fun QuestionsSection(
 
     Column(modifier = Modifier.fillMaxWidth()) {
         questions.forEach { question ->
-            val existingQuestion = patient.questions!!.find { it.questionUID == question.id }
+            val existingQuestion = patient.Analysis!!.find { it.questionUID == question.id }
 
             Text(
                 text = question.question,
@@ -262,7 +160,7 @@ fun QuestionsSection(
                         onValueChange = {
                             textValue = it
 //                            existingQuestion?.answers = listOf(textValue)
-                            apiviewmodel.updatePatientResponce(patient.uhid, question.id!!, it, question.question,false)
+                            apiviewmodel.updatePatientAnalysisResponce(patient.uhid, question.id!!, it, question.question,false)
                         },
                         label = { Text("Enter your response") },
                         modifier = Modifier.fillMaxWidth()
@@ -278,7 +176,7 @@ fun QuestionsSection(
                             if (it.all { char -> char.isDigit() }) {
                                 numberValue = it
 //                                existingQuestion?.answers = listOf(numberValue)
-                                apiviewmodel.updatePatientResponce(patient.uhid, question.id!!, it, question.question,false)
+                                apiviewmodel.updatePatientAnalysisResponce(patient.uhid, question.id!!, it, question.question,false)
                             }
                         },
                         label = { Text("Enter a number") },
@@ -297,9 +195,9 @@ fun QuestionsSection(
                                 .padding(vertical = 4.dp)
                         ) {
                             RadioButton(
-                                selected = isOptionChecked(patient, question.id, option),
+                                selected = isOptionCheckedAnalysis(patient, question.id, option),
                                 onClick = {
-                                    apiviewmodel.updatePatientResponce(patient.uhid, question.id!!, option, question.question,false)
+                                    apiviewmodel.updatePatientAnalysisResponce(patient.uhid, question.id!!, option, question.question,false)
                                 },
                                 enabled = isDoctor
                             )
@@ -322,9 +220,9 @@ fun QuestionsSection(
                                 .padding(vertical = 4.dp)
                         ) {
                             Checkbox(
-                                checked = isOptionChecked(patient, question.id, option),
+                                checked = isOptionCheckedAnalysis(patient, question.id, option),
                                 onCheckedChange = {
-                                    apiviewmodel.updatePatientResponce(patient.uhid, question.id!!, option, question.question,true)
+                                    apiviewmodel.updatePatientAnalysisResponce(patient.uhid, question.id!!, option, question.question,true)
                                 },
                                 enabled = isDoctor
                             )
@@ -353,7 +251,7 @@ fun QuestionsSection(
                                         selectedOption = option
                                         expanded = false
 //                                        existingQuestion?.answers = listOf(selectedOption)
-                                        apiviewmodel.updatePatientResponce(patient.uhid, question.id!!, option, question.question,false)
+                                        apiviewmodel.updatePatientAnalysisResponce(patient.uhid, question.id!!, option, question.question,false)
                                     }
                                 )
                             }
@@ -382,7 +280,7 @@ fun QuestionsSection(
                                     val formattedDate =
                                         "$selectedDay/${selectedMonth + 1}/$selectedYear"
                                     selectedValue = formattedDate
-                                    apiviewmodel.updatePatientResponce(
+                                    apiviewmodel.updatePatientAnalysisResponce(
                                         patient.uhid,
                                         question.id!!,
                                         formattedDate,
@@ -409,7 +307,7 @@ fun QuestionsSection(
                                 { _, selectedHour, selectedMinute ->
                                     val formattedTime = String.format("%02d:%02d", selectedHour, selectedMinute)
                                     selectedValue = formattedTime
-                                    apiviewmodel.updatePatientResponce(patient.uhid, question.id!!, formattedTime, question.question,false)
+                                    apiviewmodel.updatePatientAnalysisResponce(patient.uhid, question.id!!, formattedTime, question.question,false)
                                 },
                                 hour, minute, true
                             )
@@ -445,7 +343,7 @@ fun QuestionsSection(
                                                 )
                                             }"
                                             selectedValue = formattedDateTime
-                                            apiviewmodel.updatePatientResponce(
+                                            apiviewmodel.updatePatientAnalysisResponce(
                                                 patient.uhid,
                                                 question.id!!,
                                                 formattedDateTime,
@@ -479,80 +377,22 @@ fun QuestionsSection(
 
 
 @Composable
-fun NavigationButtons(
-    currentIndex: Int,
-    totalCategories: Int,
-    onPrevious: () -> Unit,
+fun AnalysisNavigationButtons(
+ 
     onNextOrSubmit: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        if (currentIndex > 0) {
-            Button(onClick = onPrevious) {
-                Text("Previous")
-            }
-        }
+     
         Button(onClick = onNextOrSubmit) {
-            Text(if (currentIndex < totalCategories - 1) "Submit & Next" else "Submit")
+            Text( "Submit")
         }
     }
 }
 
-@Composable
-fun CategoryDropdown(
-    categories: List<Question>,
-    selectedCategoryIndex: Int,
-    onCategorySelected: (Int) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
 
-    Box {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(10.dp)
-                .border(4.dp, Constants.SecondaryColor, RoundedCornerShape(10.dp)),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = categories.getOrNull(selectedCategoryIndex)?.category
-                    ?: "Select Category",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier
-                    .wrapContentWidth()
-                    .padding(8.dp)
-                    .clickable { expanded = true }
-            )
-            Icon(
-                imageVector = Icons.Filled.KeyboardArrowDown,
-                contentDescription = "Expand Dropdown",
-                tint = Color.Black,
-                modifier = Modifier
-                    .padding(5.dp)
-                    .clickable { expanded = true }
-            )
-        }
-
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            categories.forEachIndexed { index, category ->
-                DropdownMenuItem(
-                    text = { Text(category.category) },
-                    onClick = {
-                        onCategorySelected(index)
-                        expanded = false
-                    }
-                )
-            }
-        }
-    }
-}
 
 private fun handleOptionSelection(
     patient: Patient,
@@ -576,14 +416,14 @@ private fun handleOptionSelection(
     }
 }
 
-private fun isOptionChecked(patient: Patient, id: String?, option: String): Boolean {
+private fun isOptionCheckedAnalysis(patient: Patient, id: String?, option: String): Boolean {
     // Check if questions are null
-    if (patient.questions.isNullOrEmpty()) {
+    if (patient.Analysis.isNullOrEmpty()) {
         return false
     }
 
     // Find the question with the given ID
-    val question = patient.questions!!.find { it.questionUID == id }
+    val question = patient.Analysis!!.find { it.questionUID == id }
     if (question != null) {
         // Check if the option exists in the answers list
         return question.answers.contains(option)

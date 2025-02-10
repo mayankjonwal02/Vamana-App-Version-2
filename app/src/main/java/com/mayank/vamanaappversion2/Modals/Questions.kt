@@ -21,5 +21,8 @@ data class QuestionDetail(
     var question: String,
 
     @SerializedName("options")
-    var options: List<String>
+    var options: List<String>,
+
+    @SerializedName("input_type")
+    var inputtype : String
 )

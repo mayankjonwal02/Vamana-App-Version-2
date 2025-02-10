@@ -12,8 +12,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
@@ -30,6 +32,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.ImeAction
@@ -39,7 +42,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.mayank.vamanaapp.Frontend.Doctor.AnswerQuestionScreen
 import com.mayank.vamanaappversion2.Backend.API_ViewModel
+import com.mayank.vamanaappversion2.Backend.getSharedPreferences
 import com.mayank.vamanaappversion2.Constants
+import com.mayank.vamanaappversion2.Frontend.Doctor.AnalysisQuestionScreen
+import com.mayank.vamanaappversion2.Frontend.Doctor.SnehapanaCalculatorScreen
 import com.mayank.vamanaappversion2.Frontend.Doctor.UpdatePatientFormScreen
 import com.mayank.vamanaappversion2.Modals.Patient
 import com.mayank.vamanaappversion2.Modals.Question
@@ -56,12 +62,15 @@ fun AllPatientsScreen(apiviewmodel: API_ViewModel) {
     // State to hold the search query
 
     val questions_with_Category by apiviewmodel.all_questions.collectAsState()
+    val analysisQuestions by apiviewmodel.all_analysis_questions.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     // Sample patient list
+    var context = LocalContext.current
     val patientList by apiviewmodel.all_patients.collectAsState()
     LaunchedEffect(Unit) {
         apiviewmodel.GetAllQuestions()
         apiviewmodel.GetAllPatients()
+        apiviewmodel.GetAnalysisQuestions()
     }
 
     LaunchedEffect(patientList) {
@@ -76,7 +85,8 @@ fun AllPatientsScreen(apiviewmodel: API_ViewModel) {
     }
 
     Box(
-            modifier = Modifier.background(Color.White)
+            modifier = Modifier.background(Color.White),
+        contentAlignment = Alignment.BottomEnd
     ) {
 
         Column(
@@ -131,6 +141,11 @@ fun AllPatientsScreen(apiviewmodel: API_ViewModel) {
                 }
             }
         }
+        Button(onClick = {
+            exportPatientsToCSV(context,patientList,questions_with_Category,analysisQuestions)
+        }) {
+            Text(text = "Export Data")
+        }
     }
 }
 
@@ -163,7 +178,12 @@ fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
 fun ExpandablePatientCard(patient: Patient, apiviewmodel: API_ViewModel, questions_with_categories: List<Question>) {
     var isExpanded by remember { mutableStateOf(false) }
     var showBottomSheet = remember { mutableStateOf(false) }
+    var showBottomSheet1 = remember { mutableStateOf(false) }
+    var showBottomSheet2 = remember { mutableStateOf(false) }
     var showUpdateBottomSheet = remember { mutableStateOf(false) }
+    var context = LocalContext.current
+    val role = getSharedPreferences(context).getString("role", "admin")
+    val isDoctor = role == "staff"
 
     var isDeleteDialogOpen by remember {
         mutableStateOf(false)
@@ -214,8 +234,26 @@ fun ExpandablePatientCard(patient: Patient, apiviewmodel: API_ViewModel, questio
                     Text("Date of Vamana: ${convertIsoToCustomDate(patient.dateOfVamana!!)}", style = MaterialTheme.typography.bodyMedium)
                     Text("Prakriti: ${patient.prakriti}", style = MaterialTheme.typography.bodyMedium)
                     Spacer(modifier = Modifier.height(20.dp))
-                    Button(onClick = { showBottomSheet.value = true }) {
-                        Text(text = "Show Questions")
+
+                    Row(modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceAround)
+                    {
+                        Button(onClick = { showBottomSheet.value = true }) {
+                            Text(text = "Show Questions")
+                        }
+
+                        Button(onClick = { showBottomSheet1.value = true }) {
+                            Text(text = "Analyse Patient")
+                        }
+
+
+                    }
+
+                    Button(onClick = { showBottomSheet2.value = true }) {
+                        Text(text = "Snehapana Calculator")
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
@@ -231,6 +269,28 @@ fun ExpandablePatientCard(patient: Patient, apiviewmodel: API_ViewModel, questio
 
 
                     }
+
+                    TextButton(onClick = { sharePdf(context,1) }, colors = ButtonDefaults.textButtonColors(
+                        contentColor = Constants.BlueButtonColor
+                    )) {
+                        Icon(imageVector = Icons.Filled.Share, contentDescription = "", modifier = Modifier.padding(6.dp))
+                        Text(text = "  Share Avara Samsarjana Karma PDF")
+                    }
+
+                    TextButton(onClick = { sharePdf(context,2) }, colors = ButtonDefaults.textButtonColors(
+                        contentColor = Constants.BlueButtonColor
+                    )) {
+                        Icon(imageVector = Icons.Filled.Share, contentDescription = "", modifier = Modifier.padding(6.dp))
+                        Text(text = "  Share Madhyam Samsarjana Karma PDF")
+                    }
+
+                    TextButton(onClick = { sharePdf(context,3) }, colors = ButtonDefaults.textButtonColors(
+                        contentColor = Constants.BlueButtonColor
+                    )) {
+                        Icon(imageVector = Icons.Filled.Share, contentDescription = "", modifier = Modifier.padding(6.dp))
+                        Text(text = "  Share Pravar Shuddhi Samsarjana Karma PDF")
+
+                    }
                 }
             }
         }
@@ -239,9 +299,21 @@ fun ExpandablePatientCard(patient: Patient, apiviewmodel: API_ViewModel, questio
 
     if(showBottomSheet.value)
     {
-        QuestionBottomSheet(patient = patient, showBottomSheet,apiviewmodel,questions_with_categories)
+        QuestionBottomSheet(patient = patient, showBottomSheet,apiviewmodel,questions_with_categories,isDoctor)
     }
 
+    if(showBottomSheet1.value)
+    {
+
+        AnalysisQuestionBottomSheet(patient = patient, showBottomSheet1,apiviewmodel,isDoctor)
+    }
+
+
+    if(showBottomSheet2.value)
+    {
+            SnehaPanaBottomSheet(patient = patient, showBottomSheet2,apiviewmodel,isDoctor)
+//        AnalysisQuestionBottomSheet(patient = patient, showBottomSheet1,apiviewmodel)
+    }
     if (isDeleteDialogOpen)
     {
         ConfirmPatientDelete(uhid = patient.uhid, onDismiss = { isDeleteDialogOpen = false }) {
@@ -257,6 +329,8 @@ fun ExpandablePatientCard(patient: Patient, apiviewmodel: API_ViewModel, questio
     {
         PatientDetailsBottomSheet(patient = patient, showBottomSheet = showUpdateBottomSheet, apiviewmodel = apiviewmodel)
     }
+
+
 }
 
 
@@ -280,7 +354,8 @@ fun QuestionBottomSheet(
     patient: Patient,
     showBottomSheet: MutableState<Boolean>,
     apiviewmodel: API_ViewModel,
-    questions_with_categories: List<Question>
+    questions_with_categories: List<Question>,
+    isDoctor: Boolean
 ) {
 
     LaunchedEffect(Unit)
@@ -306,22 +381,158 @@ fun QuestionBottomSheet(
                 AnswerQuestionScreen(patient,apiviewmodel,questions_with_categories,
                     onSubmitResponse = { onSubmitted ->
 
-                        apiviewmodel.UpdatePatientQuestions(patient)
+                        if (isDoctor)
+                        {
+                            apiviewmodel.UpdatePatientQuestions(patient)
+                            {
+                                onSubmitted()
+                            }
+                        }
+                        else
                         {
                             onSubmitted()
                         }
+
                     }
                 ) {
-                    apiviewmodel.UpdatePatientQuestions(patient)
+                    if (isDoctor)
+                    {
+                        apiviewmodel.UpdatePatientQuestions(patient)
+                        {
+                            showBottomSheet.value = false
+                            apiviewmodel.FetchUsers()
+                        }
+
+                    }
+                    else
                     {
                         showBottomSheet.value = false
-                        apiviewmodel.FetchUsers()
                     }
+
                 }
 
             }
     }
 }
+
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AnalysisQuestionBottomSheet(
+    patient: Patient,
+    showBottomSheet: MutableState<Boolean>,
+    apiviewmodel: API_ViewModel,
+    isDoctor: Boolean,
+
+    ) {
+
+    LaunchedEffect(Unit)
+    {
+        Log.i("Questions",patient.questions.toString())
+    }
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+    )
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+
+
+
+        ModalBottomSheet(
+            modifier = Modifier.fillMaxHeight(),
+            sheetState = sheetState,
+            onDismissRequest = { showBottomSheet.value = false }
+        ) {
+            AnalysisQuestionScreen(patient,apiviewmodel,
+                onSubmitResponse = { onSubmitted ->
+
+                }
+            ) {
+                if(isDoctor)
+                {
+                    apiviewmodel.UpdatePatient(patient.uhid!!,patient)
+
+                    {
+
+                        apiviewmodel.FetchUsers()
+                    }
+                }
+                showBottomSheet.value = false
+
+            }
+
+        }
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SnehaPanaBottomSheet(
+    patient: Patient,
+    showBottomSheet: MutableState<Boolean>,
+    apiviewmodel: API_ViewModel,
+    isDoctor: Boolean,
+
+    ) {
+
+    LaunchedEffect(Unit)
+    {
+        Log.i("Questions",patient.questions.toString())
+    }
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+    )
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+
+
+
+        ModalBottomSheet(
+            modifier = Modifier.fillMaxHeight(),
+            sheetState = sheetState,
+            onDismissRequest = { showBottomSheet.value = false }
+        ) {
+            SnehapanaCalculatorScreen(patient,apiviewmodel)
+            {
+                if(isDoctor)
+                {
+                    apiviewmodel.UpdatePatient(patient.uhid,patient)
+                    {
+                        showBottomSheet.value = false
+                    }
+                }
+                else
+                {
+                    showBottomSheet.value = false
+                }
+
+
+            }
+//            AnalysisQuestionScreen(patient,apiviewmodel,
+//                onSubmitResponse = { onSubmitted ->
+//
+//                }
+//            ) {
+//                apiviewmodel.UpdatePatient(patient.uhid!!,patient)
+//
+//                {
+//                    showBottomSheet.value = false
+//                    apiviewmodel.FetchUsers()
+//                }
+//            }
+
+        }
+    }
+}
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)

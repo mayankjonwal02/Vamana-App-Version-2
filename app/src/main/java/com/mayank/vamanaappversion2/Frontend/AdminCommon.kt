@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Menu
@@ -35,16 +36,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
+import com.example.analysis.AnalysisScreen
 import com.mayank.vamanaapp.Frontend.Admin.Questions.QuestionsScreen
 import com.mayank.vamanaapp.Frontend.Admin.Users.AllUsersScreen
 import com.mayank.vamanaapp.Frontend.Admin.Users.CreateUserScreen
 import com.mayank.vamanaappversion2.Backend.API_ViewModel
+import com.mayank.vamanaappversion2.Backend.getSharedPreferences
 import com.mayank.vamanaappversion2.Constants
+import com.mayank.vamanaappversion2.Frontend.Admin.Questions.AnalysisQuestions
 import com.mayank.vamanaappversion2.R
 import kotlinx.coroutines.launch
 
@@ -56,6 +61,8 @@ fun AdminCommonScreen(navController: NavHostController, apiviewmodel: API_ViewMo
  
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         val scope = rememberCoroutineScope()
+    var context = LocalContext.current
+    var role = getSharedPreferences(context).getString("role","Not Defined")
         var content_state = remember {
             mutableStateOf(0)
         }
@@ -86,32 +93,70 @@ fun AdminCommonScreen(navController: NavHostController, apiviewmodel: API_ViewMo
                             label = { Text("Questions") },
                             selected = false,
                             icon = { Icon(Icons.Outlined.QuestionAnswer, contentDescription = null) },
-                            onClick = { content_state.value = 0 }
+                            onClick = { content_state.value = 0
+                                scope.launch {
+                                    drawerState.close()
+                                }
+                            }
+                        )
+                        NavigationDrawerItem(
+                            label = { Text("Analysis Questions") },
+                            selected = false,
+                            icon = { Icon(Icons.Outlined.QuestionAnswer, contentDescription = null) },
+                            onClick = { content_state.value = 4
+                                scope.launch {
+                                    drawerState.close()
+                                }
+                            }
                         )
                         NavigationDrawerItem(
                             label = { Text("Create Users") },
                             selected = false,
                             icon = { Icon(Icons.Default.Person, contentDescription = null) },
-                            onClick = { content_state.value = 1 },
+                            onClick = { content_state.value = 1
+                                scope.launch {
+                                    drawerState.close()
+                                }},
                         )
                         NavigationDrawerItem(
                             label = { Text("View Users") },
                             selected = false,
                             icon = { Icon(Icons.Default.Groups, contentDescription = null) },
-                            onClick = { content_state.value = 2 },
+                            onClick = { content_state.value = 2
+                                scope.launch {
+                                    drawerState.close()
+                                }},
                         )
                         NavigationDrawerItem(
                             label = { Text("View Patient Data") },
                             selected = false,
                             icon = { Icon(Icons.Default.Groups, contentDescription = null) },
-                            onClick = { content_state.value = 3 },
+                            onClick = { content_state.value = 3
+                                scope.launch {
+                                    drawerState.close()
+                                }},
+                        )
+                        NavigationDrawerItem(
+                            label = { Text("OverAll Analysis") },
+                            selected = false,
+                            icon = { Icon(Icons.Default.Analytics, contentDescription = null) },
+                            onClick = { content_state.value = 5
+                                scope.launch {
+                                    drawerState.close()
+                                }},
                         )
                         NavigationDrawerItem(
                             label = { Text("Logout") },
                             selected = false,
                             icon = { Icon(Icons.Default.Logout, contentDescription = null) },
-                            onClick = { navController.navigate("signin") },
+                            onClick = { navController.navigate("signin") {
+                                popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                            },
                         )
+
+
                         Spacer(Modifier.height(12.dp))
                     }
                 }
@@ -156,6 +201,13 @@ fun AdminCommonScreen(navController: NavHostController, apiviewmodel: API_ViewMo
                         }
                         3 -> {
                             AllPatientsScreen(apiviewmodel)
+                        }
+
+                        4 -> {
+                            AnalysisQuestions(apiviewmodel)
+                        }
+                        5 -> {
+                            AnalysisScreen(apiviewmodel)
                         }
 
                     }

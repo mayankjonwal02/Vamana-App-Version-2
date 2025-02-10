@@ -41,15 +41,32 @@ data class Patient(
     @SerializedName("questions")
     var questions: List<PatientQuestion>? = null,
 
+    @SerializedName("Analysis")
+    var Analysis: List<PatientQuestion>? = null,
+
     @SerializedName("createdAt")
     val createdAt: String? = null,
 
     @SerializedName("updatedAt")
     val updatedAt: String? = null,
 
+    @SerializedName("SnehaPana")
+    val SnehaPana: List<SnehaPanaItem>? = null,
+
 
     @SerializedName("results")
     val results: PatientResult? = null,
+)
+
+data class SnehaPanaItem(
+    @SerializedName("day")
+    val day: Number,
+
+    @SerializedName("dose")
+    val dose: Number,
+
+    @SerializedName("digestivehours")
+    val digestiveHours : Number
 )
 
 data class PatientQuestion(
@@ -60,7 +77,7 @@ data class PatientQuestion(
     val question: String,
 
     @SerializedName("answers")
-    val answers: List<String> = emptyList()
+    var answers: List<String> = emptyList()
 )
 
 data class PatientResult(

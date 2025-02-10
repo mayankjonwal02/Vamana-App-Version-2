@@ -4,6 +4,7 @@ import com.google.gson.annotations.SerializedName
 import com.mayank.vamanaappversion2.Modals.Patient
 import com.mayank.vamanaappversion2.Modals.PatientQuestion
 import com.mayank.vamanaappversion2.Modals.Question
+import com.mayank.vamanaappversion2.Modals.QuestionDetail
 import com.mayank.vamanaappversion2.Modals.User
 
 
@@ -62,7 +63,6 @@ data class GetPatientsResponce (
     @SerializedName("patients") val patients: List<Patient>,
 )
 
-
 data class UpdatePatientsRequest (
     @SerializedName("update") val update: Patient
 )
@@ -74,5 +74,30 @@ data class UpdatePatientsQuestionsRequest (
 
 data class CategoryRequest(
     @SerializedName("category") val category: String
+)
+
+
+
+data class GetAnalysisQuestionsResponce (
+    @SerializedName("message") val message: String,
+    @SerializedName("executed") val executed: Boolean,
+    @SerializedName("questions") val questions: List<QuestionDetail>,
+)
+
+
+data class OverAllAnalysisResponse(
+    @SerializedName("message") val message: String,
+    @SerializedName("executed") val executed: Boolean,
+    @SerializedName("questions") val questions: List<QuestionAnalysis>
+)
+
+data class QuestionAnalysis(
+    @SerializedName("question") val question: String,
+    @SerializedName("options") val options: List<OptionAnalysis>
+)
+
+data class OptionAnalysis(
+    @SerializedName("option") val option: String,
+    @SerializedName("value") val value: String
 )
 

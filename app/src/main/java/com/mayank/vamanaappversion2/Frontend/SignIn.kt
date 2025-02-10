@@ -160,11 +160,21 @@ fun SignInScreen(navController: NavHostController, apiviewmodel: API_ViewModel) 
                     }
 
                     TextButton(
-                        onClick = { isDoctorLogin = !isDoctorLogin },
+                        onClick = {
+
+//                            isDoctorLogin = !isDoctorLogin
+                            UserLogin(id.text , password.text , navController ,context,apiviewmodel,Role.ADMIN )
+
+                        },
 //
                     ) {
                         Text(
-                            text = if(isDoctorLogin) "Login as Admin" else "login as Staff",
+                            text =
+//                            if(isDoctorLogin)
+                                "Login as Admin"
+//                            else
+//                                "login as Staff"
+                            ,
                             color = Constants.SecondaryColor,
                             fontSize = 16.sp,
                             textAlign = TextAlign.Center
@@ -197,6 +207,7 @@ fun UserLogin(
     {
         if ( id == Constants.AdminID && password == Constants.AdminPassword && role == Role.ADMIN)
         {
+            getSharedPreferences(context).edit().putString("role","admin").apply()
             navController.navigate("adminpanel")
             Toast.makeText(context , "Login Successful" , Toast.LENGTH_SHORT).show()
         }
