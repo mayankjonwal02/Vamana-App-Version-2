@@ -45,6 +45,8 @@ fun SnehapanaCalculatorScreen(patient: Patient, apiViewModel: API_ViewModel, onS
 
     // Ensure data is loaded when patient data changes
 
+
+
     LaunchedEffect(Unit) {
         patient.SnehaPana?.let { snehaPanaList ->
             days.forEachIndexed { index, day ->
@@ -58,11 +60,20 @@ fun SnehapanaCalculatorScreen(patient: Patient, apiViewModel: API_ViewModel, onS
     }
 
     // Corrected total dose calculation
+
     val totalDoses = doses.mapIndexed { index, dose ->
         val doseValue = dose.toFloatOrNull() ?: 0f
-        val hourValue = digestivehours[index].toFloatOrNull() ?: 0f // Default to 1 if empty
-        doseValue * hourValue
+        val digestiveHourValue = digestivehours[index].toFloatOrNull() ?: 1f
+        val hourFactor = if (index < hours.size) hours[index] else 1
+        (doseValue /digestiveHourValue) * hourFactor
     }
+
+
+//    val totalDoses = doses.mapIndexed { index, dose ->
+//        val doseValue = dose.toFloatOrNull() ?: 0f
+//        val hourValue = digestivehours[index].toFloatOrNull() ?: 0f // Default to 1 if empty
+//        doseValue * hourValue
+//    }
 
     val scrollState = rememberScrollState()
     val keyboardController = LocalSoftwareKeyboardController.current
