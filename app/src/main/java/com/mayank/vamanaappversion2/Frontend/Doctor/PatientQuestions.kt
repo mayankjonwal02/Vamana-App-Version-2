@@ -185,6 +185,7 @@ fun SideNavBar(
             .fillMaxHeight()
 //            .background(MaterialTheme.colorScheme.surface)
             .padding(16.dp)
+            .verticalScroll(rememberScrollState())
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceAround, modifier = Modifier
             .background(Constants.PrimaryColor)
@@ -225,6 +226,7 @@ fun SideNavBar(
             }
 
         }
+        Spacer(modifier = Modifier.height(30.dp))
     }
 }
 
