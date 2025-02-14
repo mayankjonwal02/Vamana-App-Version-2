@@ -1,5 +1,14 @@
 import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Environment
+import android.provider.OpenableColumns
+import android.util.Base64
 import android.util.Log
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -40,8 +49,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import com.mayank.vamanaapp.Frontend.Doctor.AnswerQuestionScreen
 import com.mayank.vamanaappversion2.Backend.API_ViewModel
+import com.mayank.vamanaappversion2.Backend.getList
 import com.mayank.vamanaappversion2.Backend.getSharedPreferences
 import com.mayank.vamanaappversion2.Constants
 import com.mayank.vamanaappversion2.Frontend.Doctor.AnalysisQuestionScreen
@@ -49,6 +60,7 @@ import com.mayank.vamanaappversion2.Frontend.Doctor.SnehapanaCalculatorScreen
 import com.mayank.vamanaappversion2.Frontend.Doctor.UpdatePatientFormScreen
 import com.mayank.vamanaappversion2.Modals.Patient
 import com.mayank.vamanaappversion2.Modals.Question
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -58,7 +70,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun AllPatientsScreen(apiviewmodel: API_ViewModel) {
+fun AllPatientsScreen(apiviewmodel: API_ViewModel, role: String?) {
     // State to hold the search query
 
     val questions_with_Category by apiviewmodel.all_questions.collectAsState()
@@ -66,10 +78,20 @@ fun AllPatientsScreen(apiviewmodel: API_ViewModel) {
     var searchQuery by remember { mutableStateOf("") }
     // Sample patient list
     var context = LocalContext.current
+//    var context = LocalContext.current
+    var instituteId = getSharedPreferences(context).getString("institute_id","Not Available")?:""
     val patientList by apiviewmodel.all_patients.collectAsState()
     LaunchedEffect(Unit) {
         apiviewmodel.GetAllQuestions()
-        apiviewmodel.GetAllPatients()
+        if (role == "admin")
+        {
+            apiviewmodel.GetAllPatients()
+        }
+        else
+        {
+            apiviewmodel.GetAllPatientsByInstituteID(instituteId)
+        }
+
         apiviewmodel.GetAnalysisQuestions()
     }
 
@@ -141,11 +163,16 @@ fun AllPatientsScreen(apiviewmodel: API_ViewModel) {
                 }
             }
         }
-        Button(onClick = {
-            exportPatientsToCSV(context,patientList,questions_with_Category,analysisQuestions)
-        }) {
-            Text(text = "Export Data")
+        var powers = getList(context,"powers")
+        if (role == "admin" || powers.contains("Export Data") )
+        {
+            Button(onClick = {
+                exportPatientsToCSV(context,patientList,questions_with_Category,analysisQuestions)
+            }) {
+                Text(text = "Export Data")
+            }
         }
+
     }
 }
 
@@ -174,6 +201,41 @@ fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
     )
 }
 
+fun getFileName(context: Context, uri: Uri): String? {
+    val cursor = context.contentResolver.query(uri, null, null, null, null)
+    return cursor?.use {
+        val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+        it.moveToFirst()
+        it.getString(nameIndex)
+    }
+}
+
+fun SaveReport(context: Context, uri: Uri, patient: Patient, apiviewmodel: API_ViewModel)
+{
+    val fileName = getFileName(context, uri)
+    val inputStream = context.contentResolver.openInputStream(uri)
+    val fileData = inputStream?.readBytes()?.let { Base64.encodeToString(it, Base64.DEFAULT) }
+    if (fileData != null) {
+        apiviewmodel.updatePatientPdf(patient.uhid,fileData,"pdf",fileData)
+        apiviewmodel.UpdatePatient(patient.uhid,patient)
+        {
+
+        }
+    }
+}
+
+fun viewPdf(context: Context, base64String: String) {
+    val pdfData = Base64.decode(base64String, Base64.DEFAULT)
+    val file = File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "temp.pdf")
+    file.writeBytes(pdfData)
+
+    val pdfUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    val intent = Intent(Intent.ACTION_VIEW).apply {
+        setDataAndType(pdfUri, "application/pdf")
+        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+    }
+    context.startActivity(intent)
+}
 @Composable
 fun ExpandablePatientCard(patient: Patient, apiviewmodel: API_ViewModel, questions_with_categories: List<Question>) {
     var isExpanded by remember { mutableStateOf(false) }
@@ -187,6 +249,19 @@ fun ExpandablePatientCard(patient: Patient, apiviewmodel: API_ViewModel, questio
 
     var isDeleteDialogOpen by remember {
         mutableStateOf(false)
+    }
+
+    var pdfUri by remember { mutableStateOf<Uri?>(null) }
+    var pdfName by remember { mutableStateOf<String?>(null) }
+
+    val pickPdfLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            pdfUri = uri
+            pdfName = getFileName(context, uri)
+            SaveReport(context,uri,patient,apiviewmodel)
+        }
     }
 
     Card(
@@ -254,6 +329,24 @@ fun ExpandablePatientCard(patient: Patient, apiviewmodel: API_ViewModel, questio
 
                     Button(onClick = { showBottomSheet2.value = true }) {
                         Text(text = "Snehapana Calculator")
+                    }
+
+                    Button(onClick = { pickPdfLauncher.launch("application/pdf") }) {
+                        Text(text = "Upload Report")
+                    }
+
+                    TextButton(onClick = {
+                        if (patient.investigationReport?.fileData != null)
+                        {
+                            patient.investigationReport?.fileData?.let { viewPdf(context, it) }
+                        }
+                        else
+                        {
+                            Toast.makeText(context,"No file uploaded",Toast.LENGTH_SHORT).show()
+                        }
+
+                    }) {
+                        Text(text = "view Report")
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))

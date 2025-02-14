@@ -242,9 +242,43 @@ fun QuestionsSection(
     val context = LocalContext.current
     val role = getSharedPreferences(context).getString("role", "admin")
     val isDoctor = role == "staff"
+    var selectedFilter by remember { mutableStateOf("") }
+
+
+    val filterOptions = listOf("Day 1","Day 2","Day 3","Day 4","Day 5","Day 6","Day 7","Day 8", "Entry-1", "Entry-2", "Entry-3", "Entry-4", "Entry-5", "Entry-6",
+        "Entry-7", "Entry-8", "Entry-9", "Entry-10", "Entry-11", "Entry-12",
+        "Entry-13", "Entry-14", "Entry-15", "Entry-16", "Entry-17", "Entry-18",
+        "Entry-19", "Entry-20", "Entry-21", "Entry-22", "Entry-23", "Entry-24") // Add relevant options
+    val filteredQuestions = if (selectedFilter.isEmpty()) {
+        questions
+    } else {
+        questions.filter { it.question.contains(selectedFilter, ignoreCase = true) }
+    }
+
+
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        questions.forEach { question ->
+
+        var expanded by remember { mutableStateOf(false) }
+        Box {
+            OutlinedButton(onClick = { expanded = true }) {
+                Text(text = if (selectedFilter.isEmpty()) "Filter Questions" else "Filter: $selectedFilter")
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.height(400.dp)) {
+                DropdownMenuItem(text = { Text("All") }, onClick = {
+                    selectedFilter = ""
+                    expanded = false
+                })
+                filterOptions.forEach { option ->
+                    DropdownMenuItem(text = { Text(option) }, onClick = {
+                        selectedFilter = option
+                        expanded = false
+                    })
+                }
+            }
+        }
+
+        filteredQuestions.forEach { question ->
             val existingQuestion = patient.questions!!.find { it.questionUID == question.id }
 
             Text(

@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mayank.vamanaappversion2.Backend.API_ViewModel
+import com.mayank.vamanaappversion2.Backend.getSharedPreferences
 import com.mayank.vamanaappversion2.Constants
 import com.mayank.vamanaappversion2.Modals.Patient
 import java.text.SimpleDateFormat
@@ -68,7 +69,8 @@ fun AddPatientFormScreen(apiviewmodel: API_ViewModel) {
 
 
     var context = LocalContext.current
-
+//    var context = LocalContext.current
+    var instituteId = getSharedPreferences(context).getString("institute_id","")
 
     var patient = Patient(
         id = null ,
@@ -81,7 +83,9 @@ fun AddPatientFormScreen(apiviewmodel: API_ViewModel) {
         medicineHistory = medicineHistory.text,
         dateOfAdmission = dateOfAdmission.text,
         dateOfVamana = dateOfVamana.text,
-        prakriti = prakriti.text)
+        prakriti = prakriti.text,
+        instituteID = instituteId)
+
 
     Box(
         modifier = Modifier
@@ -280,37 +284,60 @@ fun AddPatientFormScreen(apiviewmodel: API_ViewModel) {
                         )
                     )
 
+                    OutlinedTextField(
+                        value = instituteId?:"",
+                        onValueChange = { instituteId = it },
+                        label = { Text("Institute ID") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Constants.SecondaryColor,
+                            focusedLabelColor = Constants.TertiaryColor,
+                            focusedBorderColor = Constants.TertiaryColor,
+                            unfocusedTextColor = Color.Black,
+                            unfocusedLabelColor = Color.Gray,
+                            unfocusedBorderColor = Color.Gray
+                        ),
+                        readOnly = true
+                    )
                     // Submit Button
                     Button(
                         onClick = {
-                            if (name.text.isNotEmpty() &&
-                                uhidIpdNo.text.isNotEmpty() &&
-                                age.text.isNotEmpty() && age.text != "0" &&
-                                occupation.text.isNotEmpty() &&
-                                pastIllness.text.isNotEmpty() &&
-                                address.text.isNotEmpty() &&
-                                medicineHistory.text.isNotEmpty() &&
-                                dateOfAdmission.text.isNotEmpty() &&
-                                dateOfVamana.text.isNotEmpty() )
+                            if (instituteId.isNullOrEmpty())
                             {
-                                apiviewmodel.CreatePatient(patient)
-                                {
-                                    name = TextFieldValue("")
-                                    uhidIpdNo = TextFieldValue("")
-                                    age = TextFieldValue("0")
-                                    occupation = TextFieldValue("")
-                                    pastIllness = TextFieldValue("")
-                                    address = TextFieldValue("")
-                                    medicineHistory = TextFieldValue("")
-                                    dateOfAdmission = TextFieldValue("")
-                                    dateOfVamana = TextFieldValue("")
-                                    prakriti = TextFieldValue("")
-                                }
-
-                            } else {
-                                // One or more fields are empty
-                                Toast.makeText(context , "Fields Empty", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context,"Institute ID not Available",Toast.LENGTH_SHORT).show()
                             }
+                            else
+                            {
+                                if (name.text.isNotEmpty() &&
+                                    uhidIpdNo.text.isNotEmpty() &&
+                                    age.text.isNotEmpty() && age.text != "0" &&
+                                    occupation.text.isNotEmpty() &&
+                                    pastIllness.text.isNotEmpty() &&
+                                    address.text.isNotEmpty() &&
+                                    medicineHistory.text.isNotEmpty() &&
+                                    dateOfAdmission.text.isNotEmpty() &&
+                                    dateOfVamana.text.isNotEmpty() )
+                                {
+                                    apiviewmodel.CreatePatient(patient)
+                                    {
+                                        name = TextFieldValue("")
+                                        uhidIpdNo = TextFieldValue("")
+                                        age = TextFieldValue("0")
+                                        occupation = TextFieldValue("")
+                                        pastIllness = TextFieldValue("")
+                                        address = TextFieldValue("")
+                                        medicineHistory = TextFieldValue("")
+                                        dateOfAdmission = TextFieldValue("")
+                                        dateOfVamana = TextFieldValue("")
+                                        prakriti = TextFieldValue("")
+                                    }
+
+                                } else {
+                                    // One or more fields are empty
+                                    Toast.makeText(context , "Fields Empty", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+
 
 
                         },

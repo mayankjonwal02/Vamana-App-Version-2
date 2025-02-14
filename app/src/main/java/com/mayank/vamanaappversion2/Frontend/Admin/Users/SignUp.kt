@@ -64,6 +64,7 @@ fun CreateUserScreen(apiviewmodel: API_ViewModel) {
     var contact by remember { mutableStateOf(TextFieldValue("")) }
     var password by remember { mutableStateOf(TextFieldValue("")) }
     var confirmPassword by remember { mutableStateOf(TextFieldValue("")) }
+    var instituteID by remember { mutableStateOf(TextFieldValue("")) }
     var passwordVisible by remember { mutableStateOf(false) }
     var selectedRole by remember { mutableStateOf(Role.STAFF.name) }
     val roles = listOf(Role.STAFF.name, Role.ADMIN.name)
@@ -71,7 +72,7 @@ fun CreateUserScreen(apiviewmodel: API_ViewModel) {
     val context = LocalContext.current
 
     // Powers management
-    val availablePowers = listOf("Edit Questions", "View Data")
+    val availablePowers = if (selectedRole == Role.ADMIN.name ) listOf("Edit Questions", "View Data","Edit Users")  else listOf("Export Data")
     val selectedPowers = remember { mutableStateListOf<String>() }
 
     Box(
@@ -213,28 +214,37 @@ fun CreateUserScreen(apiviewmodel: API_ViewModel) {
                             }
                         }
                     }
-
-                    // Powers Section: Only visible if role is "ADMIN"
-                    if (selectedRole == Role.ADMIN.name) {
-                        Text("Choose Powers", style = MaterialTheme.typography.bodyLarge , fontWeight = FontWeight.Bold)
-                        availablePowers.forEach { power ->
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Checkbox(
-                                    checked = selectedPowers.contains(power),
-                                    onCheckedChange = { isChecked ->
-                                        if (isChecked) {
-                                            selectedPowers.add(power)
-                                        } else {
-                                            selectedPowers.remove(power)
-                                        }
+                    Text("Choose Powers", style = MaterialTheme.typography.bodyLarge , fontWeight = FontWeight.Bold)
+                    availablePowers.forEach { power ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = selectedPowers.contains(power),
+                                onCheckedChange = { isChecked ->
+                                    if (isChecked) {
+                                        selectedPowers.add(power)
+                                    } else {
+                                        selectedPowers.remove(power)
                                     }
-                                )
-                                Text(text = power)
-                            }
+                                }
+                            )
+                            Text(text = power)
                         }
                     }
+                    // Powers Section: Only visible if role is "ADMIN"
+                    if (selectedRole == Role.STAFF.name) {
+
+                        OutlinedTextField(
+                            value = instituteID,
+                            onValueChange = { instituteID = it },
+                            label = { Text("Institute ID") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                    }
+
+
 
                     // Submit Button
                     Button(

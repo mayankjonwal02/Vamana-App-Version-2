@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Addchart
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Groups
@@ -38,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -64,6 +64,7 @@ fun DoctorCommonScreen(navController: NavHostController, apiviewmodel: API_ViewM
         mutableStateOf(0)
     }
     var context = LocalContext.current
+    var instituteId = getSharedPreferences(context).getString("institute_id","Not Available")
     var role = getSharedPreferences(context).getString("role","Not Defined")
     ModalNavigationDrawer(
         drawerContent = {
@@ -87,6 +88,8 @@ fun DoctorCommonScreen(navController: NavHostController, apiviewmodel: API_ViewM
 
                     )
 
+                    Divider(modifier = Modifier.padding(vertical = 8.dp))
+                    Text(text = "Institute ID : ${instituteId}", fontWeight = FontWeight.Bold, color = Color.Black)
                     Divider(modifier = Modifier.padding(vertical = 8.dp))
                     NavigationDrawerItem(
                         label = { Text("Create Patients") },
@@ -136,6 +139,7 @@ fun DoctorCommonScreen(navController: NavHostController, apiviewmodel: API_ViewM
                         selected = false,
                         icon = { Icon(Icons.Default.Logout, contentDescription = null) },
                         onClick = {
+                            getSharedPreferences(context).edit().clear().apply()
                             scope.launch {
                                 drawerState.close()
                             }
@@ -182,7 +186,7 @@ fun DoctorCommonScreen(navController: NavHostController, apiviewmodel: API_ViewM
                     }
 
                     1 -> {
-                        AllPatientsScreen(apiviewmodel)
+                        AllPatientsScreen(apiviewmodel, role)
                     }
 
                     2 -> {

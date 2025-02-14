@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import com.mayank.vamanaappversion2.Backend.API_ViewModel
 import com.mayank.vamanaappversion2.Constants
 import com.mayank.vamanaappversion2.Modals.Role
@@ -157,7 +158,7 @@ fun UserCard(
                     Text("Contact:  ${user.contact}")
                     Text("Role:  ${user.role}")
                     Text("Password:  ${user.password}")
-                    if (! user.powers.isNullOrEmpty() && user.role == Role.ADMIN.name){
+                    if (! user.powers.isNullOrEmpty() ){
                         Row {
                             Text(text = "Powers:  ")
                             Column {
@@ -234,7 +235,8 @@ fun EditUserDialog(
     var contact by remember { mutableStateOf(user.contact) }
     var role by remember { mutableStateOf(user.role) }
     var password by remember { mutableStateOf(user.password) }
-    val availablePowers = listOf( "Edit Questions", "View Data")
+    var instituteID by remember { mutableStateOf(user.instituteID?:"") }
+    val availablePowers = if (role == Role.ADMIN.name ) listOf("Edit Questions", "View Data","Edit Users")  else listOf("Export Data")
     val selectedPowers = remember { mutableStateListOf(*user.powers.toTypedArray()) }
     val roles = listOf(Role.STAFF.name, Role.ADMIN.name)
     var expanded by remember { mutableStateOf(false) }
@@ -248,7 +250,8 @@ fun EditUserDialog(
                         contact = contact,
                         role = role,
                         password = password,
-                        powers = selectedPowers
+                        powers = selectedPowers,
+                        instituteID = instituteID
                     )
                 )
             }) {
@@ -313,6 +316,16 @@ fun EditUserDialog(
                     onValueChange = { password = it },
                     label = { Text("Password") }
                 )
+
+                if (role == Role.STAFF.name)
+                {
+                    OutlinedTextField(
+                        value = instituteID,
+                        onValueChange = { instituteID = it },
+                        label = { Text("Institute ID") }
+                    )
+                }
+
 
                 // Powers Section
                 Text("Powers")

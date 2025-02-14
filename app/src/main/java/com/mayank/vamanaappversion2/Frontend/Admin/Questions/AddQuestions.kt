@@ -53,6 +53,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mayank.vamanaappversion2.Backend.API_ViewModel
+import com.mayank.vamanaappversion2.Backend.getSharedPreferences
 import com.mayank.vamanaappversion2.Constants
 import com.mayank.vamanaappversion2.Modals.Question
 import com.mayank.vamanaappversion2.Modals.QuestionDetail
@@ -80,6 +81,21 @@ fun QuestionsScreen(apiviewmodel: API_ViewModel) {
     var isAddQuestionDialogOpen by remember { mutableStateOf(false) }
     var isDeleteCategoryDialogOpen by remember { mutableStateOf(false) }
     var isEditCategoryDialogOpen by remember { mutableStateOf(false) }
+//    val context = LocalContext.current
+    val role = getSharedPreferences(context).getString("role", "admin")
+    val isDoctor = role == "staff"
+    var selectedFilter by remember { mutableStateOf("") }
+
+
+    val filterOptions = listOf("Day 1","Day 2","Day 3","Day 4","Day 5","Day 6","Day 7","Day 8", "Entry-1", "Entry-2", "Entry-3", "Entry-4", "Entry-5", "Entry-6",
+        "Entry-7", "Entry-8", "Entry-9", "Entry-10", "Entry-11", "Entry-12",
+        "Entry-13", "Entry-14", "Entry-15", "Entry-16", "Entry-17", "Entry-18",
+        "Entry-19", "Entry-20", "Entry-21", "Entry-22", "Entry-23", "Entry-24") // Add relevant options
+    val filteredQuestions = if (selectedFilter.isEmpty()) {
+        selectedCategory?.questions
+    } else {
+        selectedCategory?.questions?.filter { it.question.contains( selectedFilter, ignoreCase = true) }
+    }
 
     Column(
         modifier = Modifier
@@ -137,12 +153,35 @@ fun QuestionsScreen(apiviewmodel: API_ViewModel) {
 
         Spacer(modifier = Modifier.height(30.dp))
 
+
+        var expanded by remember { mutableStateOf(false) }
+        Box {
+            OutlinedButton(onClick = { expanded = true },colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.Transparent, contentColor = Constants.BlueButtonColor),
+                border = BorderStroke(3.dp, Constants.BlueButtonColor)) {
+                Text(text = if (selectedFilter.isEmpty()) "Filter Questions" else "Filter: $selectedFilter")
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.height(400.dp)) {
+                DropdownMenuItem(text = { Text("All") }, onClick = {
+                    selectedFilter = ""
+                    expanded = false
+                })
+                filterOptions.forEach { option ->
+                    DropdownMenuItem(text = { Text(option) }, onClick = {
+                        selectedFilter = option
+                        expanded = false
+                    })
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(30.dp))
+
         selectedCategory?.let { category ->
             Text("Questions for ${category.category}", style = MaterialTheme.typography.titleMedium)
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            category.questions.forEachIndexed { index, questionData ->
+            filteredQuestions?.forEachIndexed { index, questionData ->
                 QuestionItem(
                     questionData = questionData,
                     onUpdateQuestion = { updatedQuestion ->
@@ -467,7 +506,7 @@ fun EditQuestionDialog(
     var newOptionText by remember { mutableStateOf("") } // Tracks the new option text
     val inputTypesList = listOf(
         "text", "textarea", "number", "radio", "checkbox", "dropdown",
-        "date", "datetime",  "time"
+        "date", "datetime",  "time","file"
     )
     var inputtype by remember {
         mutableStateOf(input_type.toString())
@@ -624,7 +663,7 @@ fun AddQuestionDialog(
     var newOptionText by remember { mutableStateOf("") } // For the new option input
     val inputTypesList = listOf(
         "text", "textarea", "number", "radio", "checkbox", "dropdown",
-        "date", "datetime",  "time"
+        "date", "datetime",  "time","file"
     )
     var inputtype by remember {
         mutableStateOf("")

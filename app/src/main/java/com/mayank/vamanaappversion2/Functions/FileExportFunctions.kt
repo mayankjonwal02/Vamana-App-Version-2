@@ -2,6 +2,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Environment
+import android.util.Log
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.mayank.vamanaappversion2.Modals.Patient
@@ -20,18 +21,21 @@ fun exportPatientsToCSV(
     analysisQuestions: List<QuestionDetail>
 ) {
     val fileName = "PatientsData.csv"
-    val file = File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), fileName)
+    val fileDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+    val file = File(fileDir, fileName)
+    Log.d("FileExport", "File path: ${file.absolutePath}") // Add this line
 
     // Collect all unique questions and analysis questions as headers
     val allQuestions = questions.flatMap { it.questions }.distinctBy { it.id }
     val allAnalysisQuestions = analysisQuestions.distinctBy { it.id }
 
     // Construct CSV Headers
-    val headers = listOf("UHID", "Name", "Age", "Date of Admission") +
+    var headers = listOf("UHID", "Name", "Age", "Date of Admission") +
             allQuestions.map { "Question: "+it.question } +
             allAnalysisQuestions.map { "Analysis: "+it.question }
 
     // Writing to CSV file
+//    headers = listOf("1","2")
     file.bufferedWriter().use { writer ->
         // Write headers
         writer.write(headers.joinToString(","))
@@ -63,27 +67,49 @@ fun exportPatientsToCSV(
         }
     }
 
-    Toast.makeText(context, "CSV Exported: ${file.absolutePath}", Toast.LENGTH_SHORT).show()
+    if (file.exists()) {
+        Toast.makeText(context, "CSV Exported: ${file.absolutePath}", Toast.LENGTH_SHORT).show()
 
-    // Share the file
-    shareCSVFile(context, file)
+
+        // Share the file
+        shareCSVFile(context, file)
+    } else {
+        Toast.makeText(context, "Error: File not created", Toast.LENGTH_SHORT).show()
+    }
+
 }
 
 fun shareCSVFile(context: Context, file: File) {
-    val uri: Uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+    // Use the same authority as declared in the provider
 
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "text/csv"
-        putExtra(Intent.EXTRA_STREAM, uri)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    try {
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider", // Must match manifest's authorities
+            file
+        )
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/csv"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        context.startActivity(Intent.createChooser(intent, "Share CSV via"))
+        Log.i("FileExport","Exported")
+    }
+    catch (e:Exception)
+    {
+        Log.i("FileExport",e.message.toString())
     }
 
-    context.startActivity(Intent.createChooser(intent, "Share CSV via"))
+
+
 }
 
 
 fun copyPdfToInternalStorage(context: Context, fileName: String , pdfno: Int): File? {
-    val file = File(context.filesDir, fileName)
+    val fileDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+    val file = File(fileDir, fileName)
     var fileresource = if (pdfno == 1)
     {
         R.raw.avara_samsarjana_karma
@@ -123,7 +149,7 @@ fun sharePdf(context: Context,pdfno:Int) {
         "pravar_shuddhi_samsarjana_krama.pdf"
     }
     val pdfFile = copyPdfToInternalStorage(context, filename , pdfno) ?: return
-    val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", pdfFile)
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", pdfFile)
 
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "application/pdf"

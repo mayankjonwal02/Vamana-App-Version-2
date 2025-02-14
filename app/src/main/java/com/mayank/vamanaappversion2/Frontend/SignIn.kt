@@ -34,6 +34,7 @@ import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
 import com.mayank.vamanaappversion2.Backend.API_ViewModel
 import com.mayank.vamanaappversion2.Backend.getSharedPreferences
+import com.mayank.vamanaappversion2.Backend.saveList
 import com.mayank.vamanaappversion2.Constants
 import com.mayank.vamanaappversion2.Functions.isInternetConnected
 import com.mayank.vamanaappversion2.Modals.Role
@@ -208,6 +209,7 @@ fun UserLogin(
         if ( id == Constants.AdminID && password == Constants.AdminPassword && role == Role.ADMIN)
         {
             getSharedPreferences(context).edit().putString("role","admin").apply()
+            getSharedPreferences(context).edit().putString("admin_type","super_admin").apply()
             navController.navigate("adminpanel")
             Toast.makeText(context , "Login Successful" , Toast.LENGTH_SHORT).show()
         }
@@ -215,18 +217,21 @@ fun UserLogin(
         {
 
             apiviewmodel.LoginUser(id , password , role.name )
-            { isSuccess ->
+            { isSuccess , user ->
                 if (isSuccess)
                 {
+                    saveList(context,"powers",user.powers)
                     if (role == Role.ADMIN)
                     {
                         getSharedPreferences(context).edit().putString("role","admin").apply()
+
                         navController.navigate("adminpanel")
                         Toast.makeText(context , "Welcome Admin" , Toast.LENGTH_SHORT).show()
                     }
                     else if (role == Role.STAFF)
                     {
                         getSharedPreferences(context).edit().putString("role","staff").apply()
+                        getSharedPreferences(context).edit().putString("institute_id",user.instituteID).apply()
                         navController.navigate("vamanapanel")
                         Toast.makeText(context , "Login Successful" , Toast.LENGTH_SHORT).show()
                     }

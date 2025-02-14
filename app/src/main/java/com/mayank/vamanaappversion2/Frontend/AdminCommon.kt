@@ -1,6 +1,7 @@
 package com.mayank.vamanaappversion2.Frontend
 
 import AllPatientsScreen
+import android.util.Log
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
@@ -47,9 +48,11 @@ import com.mayank.vamanaapp.Frontend.Admin.Questions.QuestionsScreen
 import com.mayank.vamanaapp.Frontend.Admin.Users.AllUsersScreen
 import com.mayank.vamanaapp.Frontend.Admin.Users.CreateUserScreen
 import com.mayank.vamanaappversion2.Backend.API_ViewModel
+import com.mayank.vamanaappversion2.Backend.getList
 import com.mayank.vamanaappversion2.Backend.getSharedPreferences
 import com.mayank.vamanaappversion2.Constants
 import com.mayank.vamanaappversion2.Frontend.Admin.Questions.AnalysisQuestions
+import com.mayank.vamanaappversion2.Modals.Role
 import com.mayank.vamanaappversion2.R
 import kotlinx.coroutines.launch
 
@@ -58,13 +61,29 @@ import kotlinx.coroutines.launch
 @Composable
 fun AdminCommonScreen(navController: NavHostController, apiviewmodel: API_ViewModel)
 {
+
+
  
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         val scope = rememberCoroutineScope()
+
     var context = LocalContext.current
     var role = getSharedPreferences(context).getString("role","Not Defined")
+    var admintype = getSharedPreferences(context).getString("admin_type","")
+    Log.i("test",admintype?:"Not Available")
+    var powers = getList(context,"powers")
         var content_state = remember {
-            mutableStateOf(0)
+            if (powers.contains("Edit Questions"))
+            {
+                mutableStateOf(0)
+            }
+            else if (powers.contains("View Data"))
+            {
+                mutableStateOf(3)
+            } else {
+                mutableStateOf(1)
+            }
+
         }
         ModalNavigationDrawer(
             drawerContent = {
@@ -89,67 +108,81 @@ fun AdminCommonScreen(navController: NavHostController, apiviewmodel: API_ViewMo
                         )
 
                             Divider(modifier = Modifier.padding(vertical = 8.dp))
-                        NavigationDrawerItem(
-                            label = { Text("Questions") },
-                            selected = false,
-                            icon = { Icon(Icons.Outlined.QuestionAnswer, contentDescription = null) },
-                            onClick = { content_state.value = 0
-                                scope.launch {
-                                    drawerState.close()
+                        if (powers.contains("Edit Questions") || admintype == "super_admin")
+                        {
+                            NavigationDrawerItem(
+                                label = { Text("Questions") },
+                                selected = false,
+                                icon = { Icon(Icons.Outlined.QuestionAnswer, contentDescription = null) },
+                                onClick = { content_state.value = 0
+                                    scope.launch {
+                                        drawerState.close()
+                                    }
                                 }
-                            }
-                        )
-                        NavigationDrawerItem(
-                            label = { Text("Analysis Questions") },
-                            selected = false,
-                            icon = { Icon(Icons.Outlined.QuestionAnswer, contentDescription = null) },
-                            onClick = { content_state.value = 4
-                                scope.launch {
-                                    drawerState.close()
+                            )
+                            NavigationDrawerItem(
+                                label = { Text("Analysis Questions") },
+                                selected = false,
+                                icon = { Icon(Icons.Outlined.QuestionAnswer, contentDescription = null) },
+                                onClick = { content_state.value = 4
+                                    scope.launch {
+                                        drawerState.close()
+                                    }
                                 }
-                            }
-                        )
-                        NavigationDrawerItem(
-                            label = { Text("Create Users") },
-                            selected = false,
-                            icon = { Icon(Icons.Default.Person, contentDescription = null) },
-                            onClick = { content_state.value = 1
-                                scope.launch {
-                                    drawerState.close()
-                                }},
-                        )
-                        NavigationDrawerItem(
-                            label = { Text("View Users") },
-                            selected = false,
-                            icon = { Icon(Icons.Default.Groups, contentDescription = null) },
-                            onClick = { content_state.value = 2
-                                scope.launch {
-                                    drawerState.close()
-                                }},
-                        )
-                        NavigationDrawerItem(
-                            label = { Text("View Patient Data") },
-                            selected = false,
-                            icon = { Icon(Icons.Default.Groups, contentDescription = null) },
-                            onClick = { content_state.value = 3
-                                scope.launch {
-                                    drawerState.close()
-                                }},
-                        )
-                        NavigationDrawerItem(
-                            label = { Text("OverAll Analysis") },
-                            selected = false,
-                            icon = { Icon(Icons.Default.Analytics, contentDescription = null) },
-                            onClick = { content_state.value = 5
-                                scope.launch {
-                                    drawerState.close()
-                                }},
-                        )
+                            )
+                        }
+
+                        if(powers.contains("Edit Users") || admintype == "super_admin" )
+                        {
+                            NavigationDrawerItem(
+                                label = { Text("Create Users") },
+                                selected = false,
+                                icon = { Icon(Icons.Default.Person, contentDescription = null) },
+                                onClick = { content_state.value = 1
+                                    scope.launch {
+                                        drawerState.close()
+                                    }},
+                            )
+                            NavigationDrawerItem(
+                                label = { Text("View Users") },
+                                selected = false,
+                                icon = { Icon(Icons.Default.Groups, contentDescription = null) },
+                                onClick = { content_state.value = 2
+                                    scope.launch {
+                                        drawerState.close()
+                                    }},
+                            )
+                        }
+
+                        if (powers.contains("View Data") || admintype == "super_admin")
+                        {
+                            NavigationDrawerItem(
+                                label = { Text("View Patient Data") },
+                                selected = false,
+                                icon = { Icon(Icons.Default.Groups, contentDescription = null) },
+                                onClick = { content_state.value = 3
+                                    scope.launch {
+                                        drawerState.close()
+                                    }},
+                            )
+                            NavigationDrawerItem(
+                                label = { Text("OverAll Analysis") },
+                                selected = false,
+                                icon = { Icon(Icons.Default.Analytics, contentDescription = null) },
+                                onClick = { content_state.value = 5
+                                    scope.launch {
+                                        drawerState.close()
+                                    }},
+                            )
+                        }
+
+
                         NavigationDrawerItem(
                             label = { Text("Logout") },
                             selected = false,
                             icon = { Icon(Icons.Default.Logout, contentDescription = null) },
                             onClick = { navController.navigate("signin") {
+                                getSharedPreferences(context).edit().clear().apply()
                                 popUpTo(navController.graph.startDestinationId) { inclusive = true }
                                 launchSingleTop = true
                             }
@@ -200,7 +233,7 @@ fun AdminCommonScreen(navController: NavHostController, apiviewmodel: API_ViewMo
                             AllUsersScreen(apiviewmodel)
                         }
                         3 -> {
-                            AllPatientsScreen(apiviewmodel)
+                            AllPatientsScreen(apiviewmodel,role)
                         }
 
                         4 -> {

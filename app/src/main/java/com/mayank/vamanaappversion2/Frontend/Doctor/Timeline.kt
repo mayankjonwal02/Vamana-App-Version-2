@@ -9,10 +9,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mayank.vamanaappversion2.Backend.API_ViewModel
+import com.mayank.vamanaappversion2.Backend.getSharedPreferences
 import com.mayank.vamanaappversion2.Modals.Patient
 import java.text.SimpleDateFormat
 import java.util.*
@@ -23,62 +25,67 @@ fun Timeline(apiViewmodel: API_ViewModel) {
     val patients by apiViewmodel.all_patients.collectAsState()
     var showDaily by remember { mutableStateOf(true) }
     val chartData = processPatientData(patients, showDaily)
-
+    var context = LocalContext.current
     LaunchedEffect(Unit) {
-        apiViewmodel.GetAllPatients()
+        var instituteId = getSharedPreferences(context).getString("institute_id","Not Available")?:""
+        apiViewmodel.GetAllPatientsByInstituteID(instituteId)
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "Patient Admissions Over Time",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
-        // Toggle between daily/monthly
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+    if(!patients.isNullOrEmpty()){
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
-            FilterChip(
-                selected = showDaily,
-                onClick = { showDaily = true },
-                label = { Text("Daily") }
+            Text(
+                text = "Patient Admissions Over Time",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 16.dp)
             )
-            FilterChip(
-                selected = !showDaily,
-                onClick = { showDaily = false },
-                label = { Text("Monthly") }
-            )
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (chartData.isEmpty()) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxSize()
+            // Toggle between daily/monthly
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Text("No admission data available")
+                FilterChip(
+                    selected = showDaily,
+                    onClick = { showDaily = true },
+                    label = { Text("Daily") }
+                )
+                FilterChip(
+                    selected = !showDaily,
+                    onClick = { showDaily = false },
+                    label = { Text("Monthly") }
+                )
             }
-        } else {
-            LineChart(
-                dataPoints = chartData,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp)
-            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (chartData.isEmpty()) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Text("No admission data available")
+                }
+            } else {
+                LineChart(
+                    dataPoints = chartData,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                )
+            }
         }
     }
 }
 
 @Composable
 fun LineChart(dataPoints: List<Pair<Date, Int>>, modifier: Modifier = Modifier) {
+    if (dataPoints.isEmpty()) return // Prevent drawing if no data
+
     val maxY = dataPoints.maxOf { it.second }.toFloat()
     val minY = dataPoints.minOf { it.second }.toFloat()
     val dateFormat = if (dataPoints.size > 30)
@@ -87,46 +94,13 @@ fun LineChart(dataPoints: List<Pair<Date, Int>>, modifier: Modifier = Modifier) 
         SimpleDateFormat("dd MMM", Locale.getDefault())
 
     Canvas(modifier = modifier) {
-        val xSpace = (size.width*0.7.toFloat()) / (dataPoints.size - 1)
-        val ySpace = size.height / (maxY - minY)
-
-        // Draw Y-axis labels and points
-        for (i in 0..4) {
-            val yPos = size.height - (i * size.height / 4)
-            val value = (minY + (maxY - minY) * (i / 4f)).toInt()
-
-            // Draw Y-axis grid line
-            drawLine(
-                color = Color.LightGray,
-                start = Offset(0f, yPos),
-                end = Offset(size.width, yPos),
-                strokeWidth = 1.dp.toPx()
-            )
-
-            // Draw Y-axis value
-            drawContext.canvas.nativeCanvas.apply {
-                drawText(
-                    value.toString(),
-                    10f, // X position for Y-axis labels
-                    yPos + 15, // Y position for Y-axis labels
-                    android.graphics.Paint().apply {
-                        textSize = 12.sp.toPx()
-                        color = android.graphics.Color.BLACK
-                    }
-                )
-            }
-
-            // Draw Y-axis point (small circle)
-            drawCircle(
-                color = Color.Black,
-                radius = 3.dp.toPx(),
-                center = Offset(0f, yPos)
-            )
-        }
+        val safeDataSize = maxOf(1, dataPoints.size - 1) // Avoid division by zero
+        val xSpace = (size.width * 0.7f) / safeDataSize
+        val ySpace = if (maxY == minY) 1f else size.height / (maxY - minY)
 
         // Draw line path
         val path = Path().apply {
-            dataPoints.forEachIndexed { index, (date, count) ->
+            dataPoints.forEachIndexed { index, (_, count) ->
                 val x = xSpace * index
                 val y = size.height - (count - minY) * ySpace
                 if (index == 0) moveTo(x, y) else lineTo(x, y)
@@ -144,45 +118,22 @@ fun LineChart(dataPoints: List<Pair<Date, Int>>, modifier: Modifier = Modifier) 
             val x = xSpace * index
             val y = size.height - (count - minY) * ySpace
 
-            // Draw circle for data point
             drawCircle(
                 color = Color.Blue,
                 radius = 4.dp.toPx(),
                 center = Offset(x, y)
             )
 
-            // Draw value above the data point
+            // Draw value above the point
             drawContext.canvas.nativeCanvas.apply {
                 drawText(
                     count.toString(),
-                    x - 10, // Adjust X position for value label
-                    y - 10, // Adjust Y position for value label
+                    x - 10,
+                    y - 10,
                     android.graphics.Paint().apply {
                         textSize = 12.sp.toPx()
                         color = android.graphics.Color.BLACK
                     }
-                )
-            }
-
-            // Draw X-axis labels and points
-            if (index % 3 == 0 || index == dataPoints.size - 1) {
-                drawContext.canvas.nativeCanvas.apply {
-                    drawText(
-                        dateFormat.format(date),
-                        x,
-                        size.height - 20,
-                        android.graphics.Paint().apply {
-                            textSize = 12.sp.toPx()
-                            color = android.graphics.Color.BLACK
-                        }
-                    )
-                }
-
-                // Draw X-axis point (small circle)
-                drawCircle(
-                    color = Color.Black,
-                    radius = 3.dp.toPx(),
-                    center = Offset(x, size.height)
                 )
             }
         }

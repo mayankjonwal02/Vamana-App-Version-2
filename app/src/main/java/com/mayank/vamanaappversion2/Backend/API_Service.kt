@@ -22,7 +22,7 @@ interface API_Service {
     suspend fun createUser(@Body request : SignUpRequest) : GeneralResponce
 
     @POST("user/signin")
-    suspend fun loginUser(@Body request : SignInRequest) : GeneralResponce
+    suspend fun loginUser(@Body request : SignInRequest) : SignInResponce
 
     @GET("user/all")
     suspend fun fetchAllUsers() : GetAllUserResponce
@@ -69,7 +69,8 @@ interface API_Service {
     @GET("patient/patients")
     suspend fun getPatients() : GetPatientsResponce
 
-
+    @GET("patient/patients/institute/{instituteID}")
+    suspend fun getPatientsByInstituteID(@Path("instituteID") instituteID : String) : GetPatientsResponce
     @PUT("patient/patients/{uhid}")
     suspend fun updatePatients(@Path("uhid") uhid : String, @Body update: UpdatePatientsRequest) : GeneralResponce
 

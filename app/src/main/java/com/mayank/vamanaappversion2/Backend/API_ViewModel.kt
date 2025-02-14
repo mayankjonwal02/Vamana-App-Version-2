@@ -5,6 +5,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.mayank.vamanaappversion2.Modals.PDFData
 import com.mayank.vamanaappversion2.Modals.Patient
 import com.mayank.vamanaappversion2.Modals.PatientQuestion
 import com.mayank.vamanaappversion2.Modals.Question
@@ -80,7 +81,7 @@ class API_ViewModel(application: Application) : AndroidViewModel(application) {
         password: String,
         role: String,
 
-        onResult: (Boolean) -> Unit
+        onResult: (Boolean,User) -> Unit
     ) {
         Log.i("NetworkCall","SignIn API Called")
         viewModelScope.launch(CoroutineExceptionHandler {_,ex -> Log.i("NetworkCall",ex.message.toString())}) {
@@ -90,7 +91,7 @@ class API_ViewModel(application: Application) : AndroidViewModel(application) {
                 val response = async { RetrofitClient.loginUser(requestBody) }.await()
                 _loading.value = false
                 // Check response and invoke result
-                onResult(response.executed)
+                onResult(response.executed,response.user)
             } catch (e: HttpException) {
                 _loading.value = false
                 Log.i("NetworkCall",e.message.toString())
@@ -769,6 +770,58 @@ class API_ViewModel(application: Application) : AndroidViewModel(application) {
     }
 
 
+    fun GetAllPatientsByInstituteID(instituteID : String)
+    {
+        Log.i("NetworkCall","Fetch Patients API Called")
+
+        viewModelScope.launch(CoroutineExceptionHandler {_,ex -> Log.i("NetworkCall",ex.message.toString())}) {
+            _loading.value = true
+            try {
+                var responce = async { RetrofitClient.getPatientsByInstituteID(instituteID) }.await()
+                _loading.value = false
+                if (responce.executed)
+                {
+                    _all_patients.value = responce.patients
+                }
+                else
+                {
+                    withContext(Dispatchers.Main)
+                    {
+                        Toast.makeText(context, responce.message, Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+            }
+            catch (e:HttpException)
+            {
+                _loading.value = false
+                withContext(Dispatchers.Main) {
+                    when (e.code()) {
+                        500 -> {
+                            Toast.makeText(context, "Server Issue", Toast.LENGTH_SHORT).show()
+                        }
+                        else -> {
+                            Log.i("NetworkCall","1. " + e.localizedMessage)
+                            Toast.makeText(context, "Error While Fetching Patients", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+
+            catch (e:Exception)
+            {
+                _loading.value = false
+                withContext(Dispatchers.Main)
+                {
+                    Log.i("NetworkCall","2." + e.localizedMessage)
+
+                    Toast.makeText(context , "Error While Fetching Patients" , Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+
 
     fun UpdatePatient(uhid : String ,patient: Patient, onResult: () -> Unit)
     {
@@ -926,15 +979,19 @@ class API_ViewModel(application: Application) : AndroidViewModel(application) {
     }
 
 
-    fun updatePatientName(uhid: String, name: String) {
+    fun updatePatientPdf(uhid: String, filename: String, filetype: String, filedata: String) {
+        var pdfData = PDFData(filename,filetype,filedata)
         _all_patients.value = _all_patients.value.map { patient ->
             if (patient.uhid == uhid) {
-                patient.copy(name = name) // Use copy to create a new object with the updated name
+                var investigationReport = pdfData
+
+                patient.copy(investigationReport = investigationReport)
             } else {
-                patient // Return the unmodified patient
+                patient
             }
         }
     }
+
 
 
     fun updatePatientResponce(uhid: String, questionid: String, option: String, question: String , isMulti : Boolean) {

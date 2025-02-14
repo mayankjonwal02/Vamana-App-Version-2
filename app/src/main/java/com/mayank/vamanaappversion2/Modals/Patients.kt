@@ -38,6 +38,12 @@ data class Patient(
     @SerializedName("prakriti")
     val prakriti: String? = null,
 
+    @SerializedName("instituteID")
+    val instituteID: String? = null,
+
+    @SerializedName("InvestigationReport")
+    val investigationReport: PDFData? = null,
+
     @SerializedName("questions")
     var questions: List<PatientQuestion>? = null,
 
@@ -53,10 +59,23 @@ data class Patient(
     @SerializedName("SnehaPana")
     val SnehaPana: List<SnehaPanaItem>? = null,
 
-
     @SerializedName("results")
     val results: PatientResult? = null,
 )
+
+
+
+data class PDFData(
+    @SerializedName("filename")
+    val filename: String,
+
+    @SerializedName("fileType")
+    val fileType: String,
+
+    @SerializedName("fileData")
+    val fileData: String // Base64 PDF
+)
+
 
 data class SnehaPanaItem(
     @SerializedName("day")

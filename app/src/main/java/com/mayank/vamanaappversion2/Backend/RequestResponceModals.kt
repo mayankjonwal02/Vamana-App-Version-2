@@ -15,6 +15,14 @@ data class GeneralResponce(
 
 )
 
+data class SignInResponce(
+
+    @SerializedName("message") val message : String ,
+    @SerializedName("executed") val executed : Boolean,
+    @SerializedName("user") val user : User
+
+)
+
 data class SignInRequest(
 
     @SerializedName("userID") val userID: String,

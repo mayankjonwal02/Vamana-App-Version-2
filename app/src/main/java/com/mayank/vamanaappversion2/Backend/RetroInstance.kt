@@ -8,7 +8,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 object RetrofitInstance {
 
     private const val host_global = "https://vamana-backend.vercel.app"
-    private const val host_local = "http://192.168.29.59:3000"
+    private const val host_local = "http://172.31.64.183:3000"
     private const val BASE_URL = "${host_global}/api/"
 
     fun getClient(): API_Service {
