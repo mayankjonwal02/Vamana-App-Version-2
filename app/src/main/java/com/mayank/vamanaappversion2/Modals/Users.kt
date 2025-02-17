@@ -18,7 +18,7 @@ data class User(
     val powers: List<String> = emptyList(),
 
     @SerializedName("instituteID")
-    val instituteID : String? = null,
+    val instituteID : String ,
 
     @SerializedName("createdAt")
     val createdAt: String? = null,

@@ -121,12 +121,12 @@ class API_ViewModel(application: Application) : AndroidViewModel(application) {
 
     fun CreateUser(user: User , onResult: () -> Unit)
     {
-        Log.i("NetworkCall","SignUp API Called")
+        Log.i("NetworkCall","SignUp API Called ${user}")
 
         viewModelScope.launch(CoroutineExceptionHandler {_,ex -> Log.i("NetworkCall",ex.message.toString())}) {
             _loading.value = true
             try {
-                var requestBody : SignUpRequest = SignUpRequest(user.userID,user.contact,user.password,user.role,user.powers)
+                var requestBody : SignUpRequest = SignUpRequest(user.userID,user.contact,user.password,user.role,user.powers,user.instituteID)
                 var responce = async { RetrofitClient.createUser(requestBody) }.await()
                 _loading.value = false
                 if (responce.executed)

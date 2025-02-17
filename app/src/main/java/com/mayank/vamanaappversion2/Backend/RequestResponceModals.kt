@@ -37,8 +37,8 @@ data class SignUpRequest(
     @SerializedName("contact") val contact : String,
     @SerializedName("password") val password : String,
     @SerializedName("role") val role : String,
-    @SerializedName("powers") val powers : List<String>
-
+    @SerializedName("powers") val powers : List<String>,
+    @SerializedName("instituteID") val instituteID : String,
 )
 data class GetAllUserResponce(
 

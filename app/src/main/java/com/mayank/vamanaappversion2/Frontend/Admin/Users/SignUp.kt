@@ -1,5 +1,6 @@
 package com.mayank.vamanaapp.Frontend.Admin.Users
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -205,6 +206,10 @@ fun CreateUserScreen(apiviewmodel: API_ViewModel) {
                                 DropdownMenuItem(
                                     onClick = {
                                         selectedRole = role
+                                        if (selectedRole == Role.ADMIN.name)
+                                        {
+                                            instituteID = TextFieldValue("admin")
+                                        }
                                         expanded = false
                                     },
                                     text = {
@@ -223,8 +228,13 @@ fun CreateUserScreen(apiviewmodel: API_ViewModel) {
                                 checked = selectedPowers.contains(power),
                                 onCheckedChange = { isChecked ->
                                     if (isChecked) {
+//                                        Log.d("Power",power)
+//
+//                                        Log.d("Power",selectedPowers.toString())
+
                                         selectedPowers.add(power)
                                     } else {
+                                        Log.d("Power",selectedPowers.toString())
                                         selectedPowers.remove(power)
                                     }
                                 }
@@ -250,22 +260,37 @@ fun CreateUserScreen(apiviewmodel: API_ViewModel) {
                     Button(
                         onClick = {
                             if (password.text == confirmPassword.text) {
-                                val user = User(
-                                    userID = id.text,
-                                    contact = contact.text,
-                                    password = password.text,
-                                    role = selectedRole,
-                                    powers = if (selectedRole == Role.ADMIN.name) selectedPowers else emptyList(),
-                                    createdAt = null,
-                                    updatedAt = null
-                                )
-                                apiviewmodel.CreateUser(user) {
-                                    id = TextFieldValue("")
-                                    contact = TextFieldValue("")
-                                    password = TextFieldValue("")
-                                    confirmPassword = TextFieldValue("")
-                                    selectedPowers.clear()
+
+                                if ( id.text != "" &&
+                                    contact.text != "" &&
+                                    password.text != "" &&
+                                    confirmPassword.text != "" )
+                                {
+                                    val user = User(
+                                        userID = id.text,
+                                        contact = contact.text,
+                                        password = password.text,
+                                        role = selectedRole,
+                                        powers =  selectedPowers ,
+                                        instituteID = instituteID.text,
+                                        createdAt = null,
+                                        updatedAt = null
+                                    )
+                                    apiviewmodel.CreateUser(user) {
+                                        id = TextFieldValue("")
+                                        contact = TextFieldValue("")
+                                        password = TextFieldValue("")
+                                        confirmPassword = TextFieldValue("")
+                                        instituteID = TextFieldValue("")
+                                        selectedPowers.clear()
+                                    }
+
                                 }
+                                else
+                                {
+                                    Toast.makeText(context, "Fields Empty", Toast.LENGTH_SHORT).show()
+                                }
+
                             } else {
                                 Toast.makeText(context, "Password Mis-Match", Toast.LENGTH_SHORT).show()
                             }
