@@ -14,6 +14,6 @@ object Constants {
     val backgroundGradient = Brush.verticalGradient(colors = listOf(PrimaryColor_second,PrimaryColor,PrimaryColor_second))
 
 
-    val AdminID = "Admin"
-    val AdminPassword = "Password"
+    val AdminID = "Master"
+    val AdminPassword = "Slave"
 }
