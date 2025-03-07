@@ -209,6 +209,7 @@ fun UserLogin(
         if ( id == Constants.AdminID && password == Constants.AdminPassword && role == Role.ADMIN)
         {
             getSharedPreferences(context).edit().putString("role","admin").apply()
+            getSharedPreferences(context).edit().putBoolean("login",true).apply()
             getSharedPreferences(context).edit().putString("admin_type","super_admin").apply()
             navController.navigate("adminpanel")
             Toast.makeText(context , "Login Successful" , Toast.LENGTH_SHORT).show()
@@ -224,13 +225,14 @@ fun UserLogin(
                     if (role == Role.ADMIN)
                     {
                         getSharedPreferences(context).edit().putString("role","admin").apply()
-
+                        getSharedPreferences(context).edit().putBoolean("login",true).apply()
                         navController.navigate("adminpanel")
                         Toast.makeText(context , "Welcome Admin" , Toast.LENGTH_SHORT).show()
                     }
                     else if (role == Role.STAFF)
                     {
                         getSharedPreferences(context).edit().putString("role","staff").apply()
+                        getSharedPreferences(context).edit().putBoolean("login",true).apply()
                         getSharedPreferences(context).edit().putString("institute_id",user.instituteID).apply()
                         navController.navigate("vamanapanel")
                         Toast.makeText(context , "Login Successful" , Toast.LENGTH_SHORT).show()

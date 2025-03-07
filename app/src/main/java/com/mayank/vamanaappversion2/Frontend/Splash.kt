@@ -20,12 +20,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.mayank.vamanaappversion2.Backend.getSharedPreferences
 import com.mayank.vamanaappversion2.Constants
 
 import com.mayank.vamanaappversion2.R
@@ -35,6 +37,7 @@ import kotlinx.coroutines.delay
 fun SplashScreen(navController: NavHostController)
 {
 
+    var context = LocalContext.current
     var logosize by remember {
         mutableStateOf(androidx.compose.animation.core.Animatable(0f))
     }
@@ -58,7 +61,28 @@ fun SplashScreen(navController: NavHostController)
         delay(500)
         textvisiblity.animateTo(1f, animationSpec = tween(1000 , easing = FastOutLinearInEasing))
         delay(1000)
-        navController.navigate("signin")
+        var islogin = getSharedPreferences(context).getBoolean("login",false)
+        if (islogin)
+        {
+            var role = getSharedPreferences(context).getString("role","na")
+            if (role == "admin")
+            {
+                navController.navigate("adminpanel")
+            }
+            else if (role == "staff")
+            {
+                navController.navigate("vamanapanel")
+            }
+            else
+            {
+                navController.navigate("signin")
+            }
+        }
+        else
+        {
+            navController.navigate("signin")
+        }
+
 
     }
 

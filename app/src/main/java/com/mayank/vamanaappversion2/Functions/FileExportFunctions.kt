@@ -13,6 +13,71 @@ import com.mayank.vamanaappversion2.R
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import com.github.doyaaaaaken.kotlincsv.dsl.csvWriter
+//fun exportPatientsToCSV(
+//    context: Context,
+//    patients: List<Patient>,
+//    questions: List<Question>,
+//    analysisQuestions: List<QuestionDetail>
+//) {
+//    val fileName = "PatientsData.csv"
+//    val fileDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+//    val file = File(fileDir, fileName)
+//    Log.d("FileExport", "File path: ${file.absolutePath}") // Add this line
+//
+//    // Collect all unique questions and analysis questions as headers
+//    val allQuestions = questions.flatMap { it.questions }.distinctBy { it.id }
+//    val allAnalysisQuestions = analysisQuestions.distinctBy { it.id }
+//
+//    // Construct CSV Headers
+//    var headers = listOf("UHID", "Name", "Age", "Date of Admission") +
+//            allQuestions.map { "Question: "+it.question } +
+//            allAnalysisQuestions.map { "Analysis: "+it.question }
+//
+//    // Writing to CSV file
+////    headers = listOf("1","2")
+//    file.bufferedWriter().use { writer ->
+//        // Write headers
+//        writer.write(headers.joinToString(","))
+//        writer.newLine()
+//
+//        // Write data rows
+//        patients.forEach { patient ->
+//            val rowData = mutableListOf(
+//                patient.uhid,
+//                patient.name,
+//                patient.age.toString(),
+//                patient.dateOfAdmission
+//            )
+//
+//            // Match answers with respective questions, join answers with '-'
+//            allQuestions.forEach { question ->
+//                val matchingAnswer = patient.questions?.find { it.questionUID == question.id }?.answers?.joinToString("-")
+//                rowData.add(matchingAnswer ?: "N/A")
+//            }
+//
+//            // Match analysis answers with respective analysis questions, join answers with '-'
+//            allAnalysisQuestions.forEach { analysisQuestion ->
+//                val matchingAnalysisAnswer = patient.Analysis?.find { it.questionUID == analysisQuestion.id }?.answers?.joinToString("-")
+//                rowData.add(matchingAnalysisAnswer ?: "N/A")
+//            }
+//
+//            writer.write(rowData.joinToString(","))
+//            writer.newLine()
+//        }
+//    }
+//
+//    if (file.exists()) {
+//        Toast.makeText(context, "CSV Exported: ${file.absolutePath}", Toast.LENGTH_SHORT).show()
+//
+//
+//        // Share the file
+//        shareCSVFile(context, file)
+//    } else {
+//        Toast.makeText(context, "Error: File not created", Toast.LENGTH_SHORT).show()
+//    }
+//
+//}
 
 fun exportPatientsToCSV(
     context: Context,
@@ -23,23 +88,20 @@ fun exportPatientsToCSV(
     val fileName = "PatientsData.csv"
     val fileDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
     val file = File(fileDir, fileName)
-    Log.d("FileExport", "File path: ${file.absolutePath}") // Add this line
 
-    // Collect all unique questions and analysis questions as headers
-    val allQuestions = questions.flatMap { it.questions }.distinctBy { it.id }
-    val allAnalysisQuestions = analysisQuestions.distinctBy { it.id }
+    // Create a map of question IDs to question texts for easy lookup
+    val questionMap = questions.flatMap { it.questions }.associateBy({ it.id }, { it.question })
+    val analysisQuestionMap = analysisQuestions.associateBy({ it.id }, { it.question })
 
     // Construct CSV Headers
-    var headers = listOf("UHID", "Name", "Age", "Date of Admission") +
-            allQuestions.map { "Question: "+it.question } +
-            allAnalysisQuestions.map { "Analysis: "+it.question }
+    val headers = listOf("UHID", "Name", "Age", "Date of Admission") +
+            questionMap.values.map { "Question: $it" } +
+            analysisQuestionMap.values.map { "Analysis: $it" }
 
     // Writing to CSV file
-//    headers = listOf("1","2")
-    file.bufferedWriter().use { writer ->
+    csvWriter().open(file) {
         // Write headers
-        writer.write(headers.joinToString(","))
-        writer.newLine()
+        writeRow(headers)
 
         // Write data rows
         patients.forEach { patient ->
@@ -51,32 +113,28 @@ fun exportPatientsToCSV(
             )
 
             // Match answers with respective questions, join answers with '-'
-            allQuestions.forEach { question ->
-                val matchingAnswer = patient.questions?.find { it.questionUID == question.id }?.answers?.joinToString("-")
+            questionMap.keys.forEach { questionId ->
+                val matchingAnswer = patient.questions?.find { it.questionUID == questionId }?.answers?.joinToString(" - ")
                 rowData.add(matchingAnswer ?: "N/A")
             }
 
             // Match analysis answers with respective analysis questions, join answers with '-'
-            allAnalysisQuestions.forEach { analysisQuestion ->
-                val matchingAnalysisAnswer = patient.Analysis?.find { it.questionUID == analysisQuestion.id }?.answers?.joinToString("-")
+            analysisQuestionMap.keys.forEach { analysisQuestionId ->
+                val matchingAnalysisAnswer = patient.Analysis?.find { it.questionUID == analysisQuestionId }?.answers?.joinToString(" - ")
                 rowData.add(matchingAnalysisAnswer ?: "N/A")
             }
 
-            writer.write(rowData.joinToString(","))
-            writer.newLine()
+            writeRow(rowData)
         }
     }
 
     if (file.exists()) {
         Toast.makeText(context, "CSV Exported: ${file.absolutePath}", Toast.LENGTH_SHORT).show()
-
-
-        // Share the file
+        // Optionally, share the file
         shareCSVFile(context, file)
     } else {
         Toast.makeText(context, "Error: File not created", Toast.LENGTH_SHORT).show()
     }
-
 }
 
 fun shareCSVFile(context: Context, file: File) {
