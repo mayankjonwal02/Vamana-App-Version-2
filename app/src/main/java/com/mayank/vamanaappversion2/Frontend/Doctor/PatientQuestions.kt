@@ -2,7 +2,6 @@ package com.mayank.vamanaapp.Frontend.Doctor
 
 import android.annotation.SuppressLint
 import android.app.TimePickerDialog
-import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -13,7 +12,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Menu
@@ -62,6 +60,7 @@ fun AnswerQuestionScreen(
     // Get screen width and height in pixels
     val screenWidth = configuration.screenWidthDp
     val screenHeight = configuration.screenHeightDp
+    val loading = apiviewmodel.loading.collectAsState()
     ModalNavigationDrawer(
         drawerState = drawerState,
         gesturesEnabled = true,
@@ -73,13 +72,16 @@ fun AnswerQuestionScreen(
                 categories = categories,
                 selectedCategoryIndex = selectedCategoryIndex,
                 onCategorySelected = {
+                    apiviewmodel._loading.value = true
                     selectedCategoryIndex = it
                     scope.launch {
                         drawerState.apply {
                             close()
                         }
                     }
-                }
+                    apiviewmodel._loading.value = false
+                },
+                apiviewmodel
             )
         }
     ) {
@@ -156,6 +158,7 @@ fun AnswerQuestionScreen(
                                 }
                             }
                         )
+                        Spacer(modifier = Modifier.height(50.dp))
                     }
                 }
             }
@@ -165,13 +168,14 @@ fun AnswerQuestionScreen(
 
 @Composable
 fun SideNavBar(
-    patient:Patient,
+    patient: Patient,
     categories: List<Question>,
     selectedCategoryIndex: Int,
-    onCategorySelected: (Int) -> Unit
+    onCategorySelected: (Int) -> Unit,
+    apiviewmodel: API_ViewModel
 ) {
     val configuration = LocalConfiguration.current
-
+    val loading = apiviewmodel.loading.collectAsState()
     // Get screen width and height in pixels
     val screenWidth = configuration.screenWidthDp
     val screenHeight = configuration.screenHeightDp
@@ -298,7 +302,10 @@ fun QuestionsSection(
                         onValueChange = {
                             textValue = it
 //                            existingQuestion?.answers = listOf(textValue)
-                            apiviewmodel.updatePatientResponce(patient.uhid, question.id!!, it, question.question,false)
+
+                                apiviewmodel.updatePatientResponce(patient.uhid, question.id!!, it, question.question,false)
+
+
                         },
                         label = { Text("Enter your response") },
                         modifier = Modifier.fillMaxWidth()

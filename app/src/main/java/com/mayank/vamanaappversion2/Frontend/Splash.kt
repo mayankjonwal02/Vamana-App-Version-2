@@ -31,12 +31,13 @@ import com.mayank.vamanaappversion2.Backend.getSharedPreferences
 import com.mayank.vamanaappversion2.Constants
 
 import com.mayank.vamanaappversion2.R
+import com.mayank.vamanaappversion2.permission.RequestPermissions
 import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(navController: NavHostController)
 {
-
+    RequestPermissions()
     var context = LocalContext.current
     var logosize by remember {
         mutableStateOf(androidx.compose.animation.core.Animatable(0f))

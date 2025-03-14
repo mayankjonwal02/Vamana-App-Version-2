@@ -41,7 +41,7 @@ class API_ViewModel(application: Application) : AndroidViewModel(application) {
     private var _all_patients = MutableStateFlow<List<Patient>>(emptyList())
     var all_patients : StateFlow<List<Patient>> = _all_patients
 
-    private var _loading = MutableStateFlow<Boolean>(false)
+    var _loading = MutableStateFlow<Boolean>(false)
     var loading : StateFlow<Boolean> = _loading
 
     fun TestConnection()
@@ -1000,6 +1000,7 @@ class API_ViewModel(application: Application) : AndroidViewModel(application) {
                 val updatedQuestions = patient.questions?.map { question ->
                     if (question.questionUID == questionid) {
                         // Check if the option already exists in the answers
+
                         val updatedAnswers = if(isMulti)
                         {
                             if (question.answers.contains(option)) {
@@ -1012,6 +1013,7 @@ class API_ViewModel(application: Application) : AndroidViewModel(application) {
                         }
                         else
                         {
+
                             listOf(option)
                         }
 
